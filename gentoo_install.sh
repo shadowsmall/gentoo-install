@@ -18,9 +18,9 @@ NC='\033[0m'
 # Fonction pour afficher un header
 print_header() {
     clear
-    echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}║         Installation Gentoo Linux avec Gnome                  ║${NC}"
-    echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${GREEN}================================================================${NC}"
+    echo -e "${GREEN}         Installation Gentoo Linux avec Gnome                  ${NC}"
+    echo -e "${GREEN}================================================================${NC}"
     echo ""
 }
 
@@ -31,7 +31,7 @@ step() {
 
 # Fonction pour afficher un message d'information
 info() {
-    echo -e "${CYAN}ℹ $1${NC}"
+    echo -e "${CYAN}i $1${NC}"
 }
 
 # Fonction pour afficher un message de succès
@@ -41,7 +41,7 @@ success() {
 
 # Fonction pour afficher un avertissement
 warning() {
-    echo -e "${RED}⚠ $1${NC}"
+    echo -e "${RED}! $1${NC}"
 }
 
 # Fonction pour lire une entrée avec valeur par défaut
@@ -122,7 +122,7 @@ read -p "Appuyez sur Entrée pour continuer ou Ctrl+C pour annuler..."
 # SECTION 1: Configuration du disque
 # ============================================
 print_header
-echo -e "${MAGENTA}═══ ÉTAPE 1/7 : Sélection du disque ═══${NC}"
+echo -e "${MAGENTA}=== ETAPE 1/7 : Selection du disque ===${NC}"
 echo ""
 
 info "Disques disponibles:"
@@ -133,24 +133,24 @@ echo ""
 AUTO_DISK="/dev/$(lsblk -d -o NAME,SIZE,TYPE | grep disk | sort -k2 -h | tail -1 | awk '{print $1}')"
 AUTO_DISK_SIZE=$(lsblk -d -o SIZE $AUTO_DISK | tail -1)
 
-info "Disque recommandé: $AUTO_DISK ($AUTO_DISK_SIZE)"
+info "Disque recommande: $AUTO_DISK ($AUTO_DISK_SIZE)"
 echo ""
 
-read_input "Entrez le chemin du disque à utiliser" "$AUTO_DISK" "DISK"
+read_input "Entrez le chemin du disque a utiliser" "$AUTO_DISK" "DISK"
 
 if [ ! -b "$DISK" ]; then
     warning "Le disque $DISK n'existe pas!"
     exit 1
 fi
 
-success "Disque sélectionné: $DISK"
+success "Disque selectionne: $DISK"
 sleep 2
 
 # ============================================
-# SECTION 2: Configuration système
+# SECTION 2: Configuration systeme
 # ============================================
 print_header
-echo -e "${MAGENTA}═══ ÉTAPE 2/7 : Configuration système ═══${NC}"
+echo -e "${MAGENTA}=== ETAPE 2/7 : Configuration systeme ===${NC}"
 echo ""
 
 read_input "Nom de la machine (hostname)" "gentoo" "HOSTNAME"
@@ -257,19 +257,19 @@ sleep 2
 # SECTION 3: Configuration utilisateurs
 # ============================================
 print_header
-echo -e "${MAGENTA}═══ ÉTAPE 3/7 : Configuration des utilisateurs ═══${NC}"
+echo -e "${MAGENTA}=== ETAPE 3/7 : Configuration des utilisateurs ===${NC}"
 echo ""
 
 info "Configuration du mot de passe root"
 read_password "Mot de passe root" "ROOT_PASSWORD"
-success "Mot de passe root configuré"
+success "Mot de passe root configure"
 echo ""
 
 read_input "Nom de l'utilisateur principal" "user" "USERNAME"
 
 # Validation du nom d'utilisateur
 if [[ ! "$USERNAME" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
-    warning "Nom d'utilisateur invalide. Utilisation de 'user' par défaut."
+    warning "Nom d'utilisateur invalide. Utilisation de 'user' par defaut."
     USERNAME="user"
 fi
 
@@ -278,14 +278,14 @@ echo ""
 
 info "Configuration du mot de passe pour $USERNAME"
 read_password "Mot de passe utilisateur" "USER_PASSWORD"
-success "Mot de passe utilisateur configuré"
+success "Mot de passe utilisateur configure"
 sleep 2
 
 # ============================================
 # SECTION 4: Options d'installation
 # ============================================
 print_header
-echo -e "${MAGENTA}═══ ÉTAPE 4/7 : Options d'installation ═══${NC}"
+echo -e "${MAGENTA}=== ETAPE 4/7 : Options d'installation ===${NC}"
 echo ""
 
 info "Sélection du miroir Gentoo"
@@ -304,27 +304,27 @@ while true; do
     case "$mirror_choice" in
         1)
             STAGE3_MIRROR="https://distfiles.gentoo.org/releases/amd64/autobuilds"
-            success "Miroir automatique sélectionné"
+            success "Miroir automatique selectionne"
             break
             ;;
         2)
             STAGE3_MIRROR="https://ftp.belnet.be/gentoo/releases/amd64/autobuilds"
-            success "Miroir Europe sélectionné"
+            success "Miroir Europe selectionne"
             break
             ;;
         3)
             STAGE3_MIRROR="https://mirrors.kernel.org/gentoo/releases/amd64/autobuilds"
-            success "Miroir Amérique du Nord sélectionné"
+            success "Miroir Amerique du Nord selectionne"
             break
             ;;
         4)
             STAGE3_MIRROR="https://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds"
-            success "Miroir Asie sélectionné"
+            success "Miroir Asie selectionne"
             break
             ;;
         5)
             STAGE3_MIRROR="https://distfiles.gentoo.org/releases/amd64/autobuilds"
-            success "Miroir par défaut sélectionné"
+            success "Miroir par defaut selectionne"
             break
             ;;
         *)
@@ -340,7 +340,7 @@ sleep 2
 # SECTION 5: Récapitulatif
 # ============================================
 print_header
-echo -e "${MAGENTA}═══ ÉTAPE 5/7 : Récapitulatif de la configuration ═══${NC}"
+echo -e "${MAGENTA}=== ETAPE 5/7 : Recapitulatif de la configuration ===${NC}"
 echo ""
 
 TOTAL_SIZE=$(lsblk -b -d -o SIZE $DISK | tail -1)
@@ -353,29 +353,29 @@ elif [ $SWAP_SIZE -gt 16384 ]; then
     SWAP_SIZE=16384
 fi
 
-echo -e "${CYAN}Configuration système:${NC}"
-echo "  • Disque: $DISK ($TOTAL_GB GB)"
-echo "  • Hostname: $HOSTNAME"
-echo "  • Timezone: $TIMEZONE"
-echo "  • Locale: $LOCALE"
-echo "  • Clavier: $KEYMAP"
+echo -e "${CYAN}Configuration systeme:${NC}"
+echo "  * Disque: $DISK ($TOTAL_GB GB)"
+echo "  * Hostname: $HOSTNAME"
+echo "  * Timezone: $TIMEZONE"
+echo "  * Locale: $LOCALE"
+echo "  * Clavier: $KEYMAP"
 echo ""
 echo -e "${CYAN}Utilisateurs:${NC}"
-echo "  • Root: ********"
-echo "  • Utilisateur: $USERNAME (********)"
+echo "  * Root: ********"
+echo "  * Utilisateur: $USERNAME (********)"
 echo ""
 echo -e "${CYAN}Partitionnement:${NC}"
-echo "  • Partition EFI: 512 MB (/boot)"
-echo "  • Partition Swap: $SWAP_SIZE MB"
-echo "  • Partition Root: $(($TOTAL_GB - $SWAP_SIZE / 1024 - 1)) GB (/)"
+echo "  * Partition EFI: 512 MB (/boot)"
+echo "  * Partition Swap: $SWAP_SIZE MB"
+echo "  * Partition Root: $(($TOTAL_GB - $SWAP_SIZE / 1024 - 1)) GB (/)"
 echo ""
 echo -e "${CYAN}Logiciels:${NC}"
-echo "  • Environnement: Gnome Desktop"
-echo "  • Init: systemd"
-echo "  • Bootloader: GRUB (UEFI)"
+echo "  * Environnement: Gnome Desktop"
+echo "  * Init: systemd"
+echo "  * Bootloader: GRUB (UEFI)"
 echo ""
 
-warning "DERNIÈRE CHANCE: Toutes les données sur $DISK seront EFFACÉES!"
+warning "DERNIERE CHANCE: Toutes les donnees sur $DISK seront EFFACEES!"
 echo ""
 read -p "Tapez 'OUI' en majuscules pour confirmer: " CONFIRM
 
@@ -388,9 +388,9 @@ fi
 # SECTION 6: Installation
 # ============================================
 print_header
-echo -e "${MAGENTA}═══ ÉTAPE 6/7 : Installation en cours ═══${NC}"
+echo -e "${MAGENTA}=== ETAPE 6/7 : Installation en cours ===${NC}"
 echo ""
-info "Cette étape peut prendre 2-4 heures selon votre connexion et votre matériel"
+info "Cette etape peut prendre 2-4 heures selon votre connexion et votre materiel"
 sleep 3
 
 # Partitionnement automatique du disque
@@ -421,9 +421,9 @@ mkfs.vfat -F32 $PART1
 mkswap $PART2
 mkfs.ext4 -F $PART3
 
-success "Partitions créées et formatées"
+success "Partitions creees et formatees"
 
-# Création du point de montage et montage des partitions
+# Montage des partitions
 step "Montage des partitions"
 mkdir -p /mnt/gentoo
 swapon $PART2
@@ -431,7 +431,7 @@ mount $PART3 /mnt/gentoo
 mkdir -p /mnt/gentoo/boot
 mount $PART1 /mnt/gentoo/boot
 
-success "Partitions montées"
+success "Partitions montees"
 
 # Téléchargement du Stage3
 step "Téléchargement du tarball Stage3"
@@ -445,8 +445,8 @@ tar xpf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 success "Stage3 extrait"
 
-# Détection automatique des CPU FLAGS
-step "Détection automatique des CPU FLAGS"
+# Detection automatique des CPU FLAGS
+step "Detection automatique des CPU FLAGS"
 if ! command -v cpuid2cpuflags &> /dev/null; then
     info "Installation de cpuid2cpuflags..."
     emerge --quiet app-portage/cpuid2cpuflags 2>/dev/null || true
@@ -454,10 +454,10 @@ fi
 
 if command -v cpuid2cpuflags &> /dev/null; then
     CPU_FLAGS=$(cpuid2cpuflags | grep "CPU_FLAGS_X86" | cut -d: -f2- | xargs)
-    info "CPU FLAGS détectés: $CPU_FLAGS"
+    info "CPU FLAGS detectes: $CPU_FLAGS"
 else
     CPU_FLAGS=""
-    warning "Impossible de détecter les CPU FLAGS automatiquement"
+    warning "Impossible de detecter les CPU FLAGS automatiquement"
 fi
 
 # Configuration automatique de make.conf
@@ -466,7 +466,7 @@ CORES=$(nproc)
 cat >> /mnt/gentoo/etc/portage/make.conf << EOF
 
 # ============================================
-# Configuration générée automatiquement
+# Configuration generee automatiquement
 # ============================================
 
 # Optimisations de compilation
@@ -476,11 +476,11 @@ CXXFLAGS="\${COMMON_FLAGS}"
 FCFLAGS="\${COMMON_FLAGS}"
 FFLAGS="\${COMMON_FLAGS}"
 
-# Parallélisation (${CORES} cœurs détectés)
+# Parallelisation (${CORES} coeurs detectes)
 MAKEOPTS="-j${CORES} -l${CORES}"
 EMERGE_DEFAULT_OPTS="--jobs=${CORES} --load-average=${CORES}"
 
-# CPU FLAGS optimisés pour votre processeur
+# CPU FLAGS optimises pour votre processeur
 EOF
 
 if [ -n "$CPU_FLAGS" ]; then
@@ -499,7 +499,7 @@ FEATURES="parallel-fetch"
 GENTOO_MIRRORS="$STAGE3_MIRROR"
 EOF
 
-success "make.conf configuré"
+success "make.conf configure"
 
 # Configuration des repos
 mkdir -p /mnt/gentoo/etc/portage/repos.conf
@@ -509,7 +509,7 @@ cp /mnt/gentoo/usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos
 cp -L /etc/resolv.conf /mnt/gentoo/etc/
 
 # Montage des filesystems système
-step "Montage des filesystems système"
+step "Montage des filesystems systeme"
 mount --types proc /proc /mnt/gentoo/proc
 mount --rbind /sys /mnt/gentoo/sys
 mount --make-rslave /mnt/gentoo/sys
@@ -518,10 +518,10 @@ mount --make-rslave /mnt/gentoo/dev
 mount --bind /run /mnt/gentoo/run
 mount --make-slave /mnt/gentoo/run
 
-success "Filesystems montés"
+success "Filesystems montes"
 
-# Création du script chroot
-step "Préparation de l'installation chroot"
+# Creation du script chroot
+step "Preparation de l'installation chroot"
 cat > /mnt/gentoo/install_chroot.sh << 'CHROOTEOF'
 #!/bin/bash
 set -e
@@ -670,9 +670,9 @@ sed -i "s|PART3|$PART3|g" /mnt/gentoo/install_chroot.sh
 
 chmod +x /mnt/gentoo/install_chroot.sh
 
-step "Entrée dans l'environnement chroot"
+step "Entree dans l'environnement chroot"
 info "La compilation de Gnome va prendre beaucoup de temps (2-4h)"
-info "Allez prendre un café (ou plusieurs)... ☕"
+info "Allez prendre un cafe (ou plusieurs)..."
 sleep 3
 
 chroot /mnt/gentoo /bin/bash /install_chroot.sh
@@ -683,52 +683,52 @@ rm /mnt/gentoo/install_chroot.sh
 rm /mnt/gentoo/stage3-*.tar.xz
 rm /mnt/gentoo/latest-stage3-amd64-systemd.txt
 
-success "Nettoyage terminé"
+success "Nettoyage termine"
 
 # ============================================
 # SECTION 7: Finalisation
 # ============================================
 print_header
-echo -e "${MAGENTA}═══ ÉTAPE 7/7 : Installation terminée ! ═══${NC}"
+echo -e "${MAGENTA}=== ETAPE 7/7 : Installation terminee ! ===${NC}"
 echo ""
 
-echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║                                                                ║${NC}"
-echo -e "${GREEN}║   🎉 Installation de Gentoo avec Gnome terminée avec succès ! ║${NC}"
-echo -e "${GREEN}║                                                                ║${NC}"
-echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
+echo -e "${GREEN}================================================================${NC}"
+echo -e "${GREEN}                                                                ${NC}"
+echo -e "${GREEN}   Installation de Gentoo avec Gnome terminee avec succes !    ${NC}"
+echo -e "${GREEN}                                                                ${NC}"
+echo -e "${GREEN}================================================================${NC}"
 echo ""
 
-echo -e "${CYAN}📋 Récapitulatif de votre installation:${NC}"
-echo "  • Système: Gentoo Linux (systemd)"
-echo "  • Desktop: Gnome"
-echo "  • Disque: $DISK"
-echo "  • Hostname: $HOSTNAME"
-echo "  • Clavier: $KEYMAP"
-echo "  • Utilisateur: $USERNAME"
+echo -e "${CYAN}Recapitulatif de votre installation:${NC}"
+echo "  * Systeme: Gentoo Linux (systemd)"
+echo "  * Desktop: Gnome"
+echo "  * Disque: $DISK"
+echo "  * Hostname: $HOSTNAME"
+echo "  * Clavier: $KEYMAP"
+echo "  * Utilisateur: $USERNAME"
 echo ""
 
-echo -e "${YELLOW}🔧 Prochaines étapes:${NC}"
-echo "  1. Quitter le chroot (si nécessaire): exit"
-echo "  2. Démonter les partitions:"
+echo -e "${YELLOW}Prochaines etapes:${NC}"
+echo "  1. Quitter le chroot (si necessaire): exit"
+echo "  2. Demonter les partitions:"
 echo "     cd /"
 echo "     umount -R /mnt/gentoo"
 echo "     swapoff $PART2"
-echo "  3. Redémarrer le système:"
+echo "  3. Redemarrer le systeme:"
 echo "     reboot"
 echo ""
 
-echo -e "${CYAN}🔑 Identifiants de connexion:${NC}"
-echo "  • Root: $ROOT_PASSWORD"
-echo "  • $USERNAME: $USER_PASSWORD"
+echo -e "${CYAN}Identifiants de connexion:${NC}"
+echo "  * Root: $ROOT_PASSWORD"
+echo "  * $USERNAME: $USER_PASSWORD"
 echo ""
 
-echo -e "${RED}⚠️  IMPORTANT:${NC}"
-echo "  Changez ces mots de passe immédiatement après la première connexion !"
+echo -e "${RED}IMPORTANT:${NC}"
+echo "  Changez ces mots de passe immediatement apres la premiere connexion !"
 echo "  Commandes: passwd (pour root) et passwd $USERNAME (pour l'utilisateur)"
 echo ""
 
-echo -e "${GREEN}✨ Profitez de votre nouveau système Gentoo ! ✨${NC}"
+echo -e "${GREEN}Profitez de votre nouveau systeme Gentoo !${NC}"
 echo "" | head -n1 | awk '{print $1}')
 
 if [ -z "$STAGE3" ]; then
