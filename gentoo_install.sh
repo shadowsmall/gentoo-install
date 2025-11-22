@@ -90,9 +90,8 @@ select_option() {
     local prompt="$1"
     shift
     local options=("$@")
-    local selected=0
     
-    echo -e "${CYAN}$prompt${NC}"
+    echo -e "\n${CYAN}$prompt${NC}"
     echo ""
     
     for i in "${!options[@]}"; do
@@ -103,8 +102,9 @@ select_option() {
     while true; do
         read -p "Sélectionnez une option (1-${#options[@]}): " choice
         if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#options[@]}" ]; then
-            echo "${options[$((choice-1))]}"
-            return
+            selected_index=$((choice-1))
+            echo "${options[$selected_index]}"
+            return 0
         else
             warning "Option invalide. Veuillez choisir entre 1 et ${#options[@]}"
         fi
@@ -401,8 +401,9 @@ mkfs.ext4 -F $PART3
 
 success "Partitions créées et formatées"
 
-# Montage des partitions
+# Création du point de montage et montage des partitions
 step "Montage des partitions"
+mkdir -p /mnt/gentoo
 swapon $PART2
 mount $PART3 /mnt/gentoo
 mkdir -p /mnt/gentoo/boot
