@@ -289,29 +289,51 @@ echo -e "${MAGENTA}═══ ÉTAPE 4/7 : Options d'installation ═══${NC}"
 echo ""
 
 info "Sélection du miroir Gentoo"
-MIRROR_CHOICE=$(select_option "Choisissez votre région pour les miroirs:" \
-    "Automatique (recommandé)" \
-    "Europe" \
-    "Amérique du Nord" \
-    "Asie" \
-    "Autre")
+echo ""
+echo "Choisissez votre région pour optimiser la vitesse de téléchargement:"
+echo ""
+echo "  1. Automatique (recommandé)"
+echo "  2. Europe"
+echo "  3. Amérique du Nord"
+echo "  4. Asie"
+echo "  5. Autre"
+echo ""
 
-case "$MIRROR_CHOICE" in
-    "Europe")
-        STAGE3_MIRROR="https://ftp.belnet.be/gentoo/releases/amd64/autobuilds"
-        ;;
-    "Amérique du Nord")
-        STAGE3_MIRROR="https://mirrors.kernel.org/gentoo/releases/amd64/autobuilds"
-        ;;
-    "Asie")
-        STAGE3_MIRROR="https://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds"
-        ;;
-    *)
-        STAGE3_MIRROR="https://distfiles.gentoo.org/releases/amd64/autobuilds"
-        ;;
-esac
+while true; do
+    read -p "Sélectionnez une option (1-5): " mirror_choice
+    case "$mirror_choice" in
+        1)
+            STAGE3_MIRROR="https://distfiles.gentoo.org/releases/amd64/autobuilds"
+            success "Miroir automatique sélectionné"
+            break
+            ;;
+        2)
+            STAGE3_MIRROR="https://ftp.belnet.be/gentoo/releases/amd64/autobuilds"
+            success "Miroir Europe sélectionné"
+            break
+            ;;
+        3)
+            STAGE3_MIRROR="https://mirrors.kernel.org/gentoo/releases/amd64/autobuilds"
+            success "Miroir Amérique du Nord sélectionné"
+            break
+            ;;
+        4)
+            STAGE3_MIRROR="https://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds"
+            success "Miroir Asie sélectionné"
+            break
+            ;;
+        5)
+            STAGE3_MIRROR="https://distfiles.gentoo.org/releases/amd64/autobuilds"
+            success "Miroir par défaut sélectionné"
+            break
+            ;;
+        *)
+            warning "Option invalide. Veuillez choisir entre 1 et 5"
+            ;;
+    esac
+done
 
-success "Miroir sélectionné"
+echo ""
 sleep 2
 
 # ============================================
@@ -415,7 +437,305 @@ success "Partitions montées"
 step "Téléchargement du tarball Stage3"
 cd /mnt/gentoo
 wget -q --show-progress ${STAGE3_MIRROR}/latest-stage3-amd64-systemd.txt
-STAGE3=$(grep -v '^#' latest-stage3-amd64-systemd.txt | awk '{print $1}')
+# Extraire correctement le nom du fichier (ignorer les signatures GPG)
+STAGE3=$(grep -v '^#' latest-stage3-amd64-systemd.txt | grep '\.tar\.xz
+
+step "Extraction du Stage3 (quelques minutes)"
+tar xpf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
+
+success "Stage3 extrait"
+
+# Détection automatique des CPU FLAGS
+step "Détection automatique des CPU FLAGS"
+if ! command -v cpuid2cpuflags &> /dev/null; then
+    info "Installation de cpuid2cpuflags..."
+    emerge --quiet app-portage/cpuid2cpuflags 2>/dev/null || true
+fi
+
+if command -v cpuid2cpuflags &> /dev/null; then
+    CPU_FLAGS=$(cpuid2cpuflags | grep "CPU_FLAGS_X86" | cut -d: -f2- | xargs)
+    info "CPU FLAGS détectés: $CPU_FLAGS"
+else
+    CPU_FLAGS=""
+    warning "Impossible de détecter les CPU FLAGS automatiquement"
+fi
+
+# Configuration automatique de make.conf
+step "Configuration automatique de make.conf"
+CORES=$(nproc)
+cat >> /mnt/gentoo/etc/portage/make.conf << EOF
+
+# ============================================
+# Configuration générée automatiquement
+# ============================================
+
+# Optimisations de compilation
+COMMON_FLAGS="-march=native -O2 -pipe"
+CFLAGS="\${COMMON_FLAGS}"
+CXXFLAGS="\${COMMON_FLAGS}"
+FCFLAGS="\${COMMON_FLAGS}"
+FFLAGS="\${COMMON_FLAGS}"
+
+# Parallélisation (${CORES} cœurs détectés)
+MAKEOPTS="-j${CORES} -l${CORES}"
+EMERGE_DEFAULT_OPTS="--jobs=${CORES} --load-average=${CORES}"
+
+# CPU FLAGS optimisés pour votre processeur
+EOF
+
+if [ -n "$CPU_FLAGS" ]; then
+    echo "CPU_FLAGS_X86=\"${CPU_FLAGS}\"" >> /mnt/gentoo/etc/portage/make.conf
+fi
+
+cat >> /mnt/gentoo/etc/portage/make.conf << EOF
+
+# Configuration pour Gnome Desktop
+USE="systemd gnome gtk wayland pulseaudio networkmanager elogind dbus"
+ACCEPT_LICENSE="*"
+GRUB_PLATFORMS="efi-64"
+
+# Optimisations Portage
+FEATURES="parallel-fetch"
+GENTOO_MIRRORS="$STAGE3_MIRROR"
+EOF
+
+success "make.conf configuré"
+
+# Configuration des repos
+mkdir -p /mnt/gentoo/etc/portage/repos.conf
+cp /mnt/gentoo/usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gentoo.conf
+
+# Copie DNS
+cp -L /etc/resolv.conf /mnt/gentoo/etc/
+
+# Montage des filesystems système
+step "Montage des filesystems système"
+mount --types proc /proc /mnt/gentoo/proc
+mount --rbind /sys /mnt/gentoo/sys
+mount --make-rslave /mnt/gentoo/sys
+mount --rbind /dev /mnt/gentoo/dev
+mount --make-rslave /mnt/gentoo/dev
+mount --bind /run /mnt/gentoo/run
+mount --make-slave /mnt/gentoo/run
+
+success "Filesystems montés"
+
+# Création du script chroot
+step "Préparation de l'installation chroot"
+cat > /mnt/gentoo/install_chroot.sh << 'CHROOTEOF'
+#!/bin/bash
+set -e
+
+source /etc/profile
+export PS1="(chroot) ${PS1}"
+
+echo "╔════════════════════════════════════════════════════════╗"
+echo "║  Installation dans l'environnement chroot             ║"
+echo "╚════════════════════════════════════════════════════════╝"
+
+echo ""
+echo ">>> Mise à jour de l'arbre Portage"
+emerge-webrsync
+emerge --sync --quiet
+
+echo ""
+echo ">>> Sélection du profil Gnome systemd"
+PROFILE_NUM=$(eselect profile list | grep "default/linux/amd64.*gnome/systemd" | grep -v "/desktop" | tail -1 | awk '{print $1}' | tr -d '[]')
+eselect profile set $PROFILE_NUM
+echo "Profil sélectionné:"
+eselect profile show
+
+echo ""
+echo ">>> Mise à jour du système (cela peut prendre du temps)"
+emerge --update --deep --newuse --with-bdeps=y @world
+
+echo ""
+echo ">>> Configuration du fuseau horaire"
+echo "TIMEZONE" > /etc/timezone
+emerge --config sys-libs/timezone-data
+
+echo ""
+echo ">>> Configuration de la locale"
+echo "LOCALE UTF-8" >> /etc/locale.gen
+echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+locale-gen
+eselect locale set LOCALE
+
+env-update && source /etc/profile
+
+echo ""
+echo ">>> Configuration du clavier"
+# Configuration du clavier console (systemd)
+mkdir -p /etc/vconsole.conf.d
+cat > /etc/vconsole.conf << VCONFEOF
+KEYMAP=KEYMAP_VAR
+FONT=lat9w-16
+VCONFEOF
+
+# Configuration du clavier X11 pour Gnome
+mkdir -p /etc/X11/xorg.conf.d
+cat > /etc/X11/xorg.conf.d/00-keyboard.conf << X11CONFEOF
+Section "InputClass"
+    Identifier "system-keyboard"
+    MatchIsKeyboard "on"
+    Option "XkbLayout" "X11_LAYOUT_VAR"
+EndSection
+X11CONFEOF
+
+echo ""
+echo ">>> Installation du firmware Linux"
+emerge sys-kernel/linux-firmware
+
+echo ""
+echo ">>> Installation du kernel (compilation longue)"
+emerge sys-kernel/gentoo-kernel
+
+echo ""
+echo ">>> Installation de Gnome et des outils système"
+echo "    Cette étape peut prendre 1-2 heures..."
+emerge --autounmask-write \
+    gnome-base/gnome \
+    gnome-extra/gnome-tweaks \
+    sys-boot/grub \
+    sys-fs/dosfstools \
+    net-misc/networkmanager \
+    app-admin/sudo
+
+# Accepter les changements
+etc-update --automode -5
+
+echo ""
+echo ">>> Configuration de fstab"
+cat > /etc/fstab << FSTABEOF
+# <fs>          <mountpoint>    <type>  <opts>              <dump> <pass>
+UUID=$(blkid -s UUID -o value PART3)  /               ext4    defaults,noatime    0 1
+UUID=$(blkid -s UUID -o value PART1)  /boot           vfat    defaults            0 2
+UUID=$(blkid -s UUID -o value PART2)  none            swap    sw                  0 0
+FSTABEOF
+
+echo ""
+echo ">>> Activation des services"
+systemctl enable NetworkManager
+systemctl enable gdm
+
+echo ""
+echo ">>> Configuration du hostname"
+hostnamectl set-hostname HOSTNAME
+
+echo ""
+echo ">>> Configuration du mot de passe root"
+echo "root:ROOTPWD" | chpasswd
+
+echo ""
+echo ">>> Création de l'utilisateur USERNAME"
+useradd -m -G wheel,audio,video,usb,cdrom -s /bin/bash USERNAME
+echo "USERNAME:USERPWD" | chpasswd
+
+echo ""
+echo ">>> Configuration de sudo"
+sed -i 's/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
+
+echo ""
+echo ">>> Installation de GRUB"
+grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+grub-mkconfig -o /boot/grub/grub.cfg
+
+echo ""
+echo ">>> Installation d'outils supplémentaires"
+emerge --noreplace \
+    app-editors/nano \
+    app-editors/vim \
+    sys-apps/pciutils \
+    sys-apps/usbutils \
+    net-misc/wget \
+    net-misc/curl \
+    app-shells/bash-completion
+
+echo ""
+echo "✓ Installation chroot terminée avec succès!"
+CHROOTEOF
+
+# Remplacer les variables
+sed -i "s|TIMEZONE|$TIMEZONE|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|LOCALE|$LOCALE|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|HOSTNAME|$HOSTNAME|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|ROOTPWD|$ROOT_PASSWORD|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|USERNAME|$USERNAME|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|USERPWD|$USER_PASSWORD|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|KEYMAP_VAR|$KEYMAP|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|X11_LAYOUT_VAR|$X11_LAYOUT|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|PART1|$PART1|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|PART2|$PART2|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|PART3|$PART3|g" /mnt/gentoo/install_chroot.sh
+
+chmod +x /mnt/gentoo/install_chroot.sh
+
+step "Entrée dans l'environnement chroot"
+info "La compilation de Gnome va prendre beaucoup de temps (2-4h)"
+info "Allez prendre un café (ou plusieurs)... ☕"
+sleep 3
+
+chroot /mnt/gentoo /bin/bash /install_chroot.sh
+
+# Nettoyage
+step "Nettoyage des fichiers temporaires"
+rm /mnt/gentoo/install_chroot.sh
+rm /mnt/gentoo/stage3-*.tar.xz
+rm /mnt/gentoo/latest-stage3-amd64-systemd.txt
+
+success "Nettoyage terminé"
+
+# ============================================
+# SECTION 7: Finalisation
+# ============================================
+print_header
+echo -e "${MAGENTA}═══ ÉTAPE 7/7 : Installation terminée ! ═══${NC}"
+echo ""
+
+echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║                                                                ║${NC}"
+echo -e "${GREEN}║   🎉 Installation de Gentoo avec Gnome terminée avec succès ! ║${NC}"
+echo -e "${GREEN}║                                                                ║${NC}"
+echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+echo -e "${CYAN}📋 Récapitulatif de votre installation:${NC}"
+echo "  • Système: Gentoo Linux (systemd)"
+echo "  • Desktop: Gnome"
+echo "  • Disque: $DISK"
+echo "  • Hostname: $HOSTNAME"
+echo "  • Clavier: $KEYMAP"
+echo "  • Utilisateur: $USERNAME"
+echo ""
+
+echo -e "${YELLOW}🔧 Prochaines étapes:${NC}"
+echo "  1. Quitter le chroot (si nécessaire): exit"
+echo "  2. Démonter les partitions:"
+echo "     cd /"
+echo "     umount -R /mnt/gentoo"
+echo "     swapoff $PART2"
+echo "  3. Redémarrer le système:"
+echo "     reboot"
+echo ""
+
+echo -e "${CYAN}🔑 Identifiants de connexion:${NC}"
+echo "  • Root: $ROOT_PASSWORD"
+echo "  • $USERNAME: $USER_PASSWORD"
+echo ""
+
+echo -e "${RED}⚠️  IMPORTANT:${NC}"
+echo "  Changez ces mots de passe immédiatement après la première connexion !"
+echo "  Commandes: passwd (pour root) et passwd $USERNAME (pour l'utilisateur)"
+echo ""
+
+echo -e "${GREEN}✨ Profitez de votre nouveau système Gentoo ! ✨${NC}"
+echo "" | head -n1 | awk '{print $1}')
+
+if [ -z "$STAGE3" ]; then
+    warning "Impossible de trouver le fichier Stage3. Tentative avec une autre méthode..."
+    STAGE3=$(grep '\.tar\.xz' latest-stage3-amd64-systemd.txt | grep -v '^#' | grep -v 'BEGIN' | head -n1 | awk '{print $1}')
+fi
+
 info "Téléchargement de $STAGE3..."
 wget -q --show-progress ${STAGE3_MIRROR}/${STAGE3}
 
