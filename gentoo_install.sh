@@ -529,24 +529,24 @@ set -e
 source /etc/profile
 export PS1="(chroot) ${PS1}"
 
-echo "╔════════════════════════════════════════════════════════╗"
-echo "║  Installation dans l'environnement chroot             ║"
-echo "╚════════════════════════════════════════════════════════╝"
+echo "========================================================"
+echo "  Installation dans l'environnement chroot"
+echo "========================================================"
 
 echo ""
-echo ">>> Mise à jour de l'arbre Portage"
+echo ">>> Mise a jour de l'arbre Portage"
 emerge-webrsync
 emerge --sync --quiet
 
 echo ""
-echo ">>> Sélection du profil Gnome systemd"
+echo ">>> Selection du profil Gnome systemd"
 PROFILE_NUM=$(eselect profile list | grep "default/linux/amd64.*gnome/systemd" | grep -v "/desktop" | tail -1 | awk '{print $1}' | tr -d '[]')
 eselect profile set $PROFILE_NUM
-echo "Profil sélectionné:"
+echo "Profil selectionne:"
 eselect profile show
 
 echo ""
-echo ">>> Mise à jour du système (cela peut prendre du temps)"
+echo ">>> Mise a jour du systeme (cela peut prendre du temps)"
 emerge --update --deep --newuse --with-bdeps=y @world
 
 echo ""
@@ -591,8 +591,8 @@ echo ">>> Installation du kernel (compilation longue)"
 emerge sys-kernel/gentoo-kernel
 
 echo ""
-echo ">>> Installation de Gnome et des outils système"
-echo "    Cette étape peut prendre 1-2 heures..."
+echo ">>> Installation de Gnome et des outils systeme"
+echo "    Cette etape peut prendre 1-2 heures..."
 emerge --autounmask-write \
     gnome-base/gnome \
     gnome-extra/gnome-tweaks \
@@ -627,7 +627,7 @@ echo ">>> Configuration du mot de passe root"
 echo "root:ROOTPWD" | chpasswd
 
 echo ""
-echo ">>> Création de l'utilisateur USERNAME"
+echo ">>> Creation de l'utilisateur USERNAME"
 useradd -m -G wheel,audio,video,usb,cdrom -s /bin/bash USERNAME
 echo "USERNAME:USERPWD" | chpasswd
 
@@ -641,7 +641,7 @@ grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
 grub-mkconfig -o /boot/grub/grub.cfg
 
 echo ""
-echo ">>> Installation d'outils supplémentaires"
+echo ">>> Installation d'outils supplementaires"
 emerge --noreplace \
     app-editors/nano \
     app-editors/vim \
@@ -652,7 +652,7 @@ emerge --noreplace \
     app-shells/bash-completion
 
 echo ""
-echo "✓ Installation chroot terminée avec succès!"
+echo "Installation chroot terminee avec succes!"
 CHROOTEOF
 
 # Remplacer les variables
