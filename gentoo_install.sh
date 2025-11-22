@@ -522,26 +522,26 @@ success "Filesystems montes"
 
 # Creation du script chroot
 step "Preparation de l'installation chroot"
-cat > /mnt/gentoo/install_chroot.sh << 'CHROOTEOF'
+cat > /mnt/gentoo/install_chroot.sh << 'ENDCHROOT'
 #!/bin/bash
 set -e
 
 source /etc/profile
-export PS1="(chroot) ${PS1}"
+export PS1="(chroot) \${PS1}"
 
 echo "========================================================"
-echo "  Installation dans l'environnement chroot"
+echo "  Installation dans l environnement chroot"
 echo "========================================================"
 
 echo ""
-echo ">>> Mise a jour de l'arbre Portage"
+echo ">>> Mise a jour de l arbre Portage"
 emerge-webrsync
 emerge --sync --quiet
 
 echo ""
 echo ">>> Selection du profil Gnome systemd"
-PROFILE_NUM=$(eselect profile list | grep "default/linux/amd64.*gnome/systemd" | grep -v "/desktop" | tail -1 | awk '{print $1}' | tr -d '[]')
-eselect profile set $PROFILE_NUM
+PROFILE_NUM=\$(eselect profile list | grep "default/linux/amd64.*gnome/systemd" | grep -v "/desktop" | tail -1 | awk '{print \$1}' | tr -d '[]')
+eselect profile set \$PROFILE_NUM
 echo "Profil selectionne:"
 eselect profile show
 
@@ -565,22 +565,18 @@ env-update && source /etc/profile
 
 echo ""
 echo ">>> Configuration du clavier"
-# Configuration du clavier console (systemd)
 mkdir -p /etc/vconsole.conf.d
-cat > /etc/vconsole.conf << VCONFEOF
-KEYMAP=KEYMAP_VAR
-FONT=lat9w-16
-VCONFEOF
+echo "KEYMAP=KEYMAP_VAR" > /etc/vconsole.conf
+echo "FONT=lat9w-16" >> /etc/vconsole.conf
 
-# Configuration du clavier X11 pour Gnome
 mkdir -p /etc/X11/xorg.conf.d
-cat > /etc/X11/xorg.conf.d/00-keyboard.conf << X11CONFEOF
+cat > /etc/X11/xorg.conf.d/00-keyboard.conf << 'ENDX11'
 Section "InputClass"
     Identifier "system-keyboard"
     MatchIsKeyboard "on"
     Option "XkbLayout" "X11_LAYOUT_VAR"
 EndSection
-X11CONFEOF
+ENDX11
 
 echo ""
 echo ">>> Installation du firmware Linux"
@@ -593,25 +589,17 @@ emerge sys-kernel/gentoo-kernel
 echo ""
 echo ">>> Installation de Gnome et des outils systeme"
 echo "    Cette etape peut prendre 1-2 heures..."
-emerge --autounmask-write \
-    gnome-base/gnome \
-    gnome-extra/gnome-tweaks \
-    sys-boot/grub \
-    sys-fs/dosfstools \
-    net-misc/networkmanager \
-    app-admin/sudo
+emerge --autounmask-write gnome-base/gnome gnome-extra/gnome-tweaks sys-boot/grub sys-fs/dosfstools net-misc/networkmanager app-admin/sudo
 
-# Accepter les changements
 etc-update --automode -5
 
 echo ""
 echo ">>> Configuration de fstab"
-cat > /etc/fstab << FSTABEOF
-# <fs>          <mountpoint>    <type>  <opts>              <dump> <pass>
-UUID=$(blkid -s UUID -o value PART3)  /               ext4    defaults,noatime    0 1
-UUID=$(blkid -s UUID -o value PART1)  /boot           vfat    defaults            0 2
-UUID=$(blkid -s UUID -o value PART2)  none            swap    sw                  0 0
-FSTABEOF
+cat > /etc/fstab << 'ENDFSTAB'
+UUID=PART3UUID  /               ext4    defaults,noatime    0 1
+UUID=PART1UUID  /boot           vfat    defaults            0 2
+UUID=PART2UUID  none            swap    sw                  0 0
+ENDFSTAB
 
 echo ""
 echo ">>> Activation des services"
@@ -627,7 +615,7 @@ echo ">>> Configuration du mot de passe root"
 echo "root:ROOTPWD" | chpasswd
 
 echo ""
-echo ">>> Creation de l'utilisateur USERNAME"
+echo ">>> Creation de l utilisateur USERNAME"
 useradd -m -G wheel,audio,video,usb,cdrom -s /bin/bash USERNAME
 echo "USERNAME:USERPWD" | chpasswd
 
@@ -641,19 +629,17 @@ grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
 grub-mkconfig -o /boot/grub/grub.cfg
 
 echo ""
-echo ">>> Installation d'outils supplementaires"
-emerge --noreplace \
-    app-editors/nano \
-    app-editors/vim \
-    sys-apps/pciutils \
-    sys-apps/usbutils \
-    net-misc/wget \
-    net-misc/curl \
-    app-shells/bash-completion
+echo ">>> Installation d outils supplementaires"
+emerge --noreplace app-editors/nano app-editors/vim sys-apps/pciutils sys-apps/usbutils net-misc/wget net-misc/curl app-shells/bash-completion
 
 echo ""
 echo "Installation chroot terminee avec succes!"
-CHROOTEOF
+ENDCHROOT
+
+# Obtenir les UUIDs
+PART1UUID=$(blkid -s UUID -o value $PART1)
+PART2UUID=$(blkid -s UUID -o value $PART2)
+PART3UUID=$(blkid -s UUID -o value $PART3)
 
 # Remplacer les variables
 sed -i "s|TIMEZONE|$TIMEZONE|g" /mnt/gentoo/install_chroot.sh
@@ -664,9 +650,9 @@ sed -i "s|USERNAME|$USERNAME|g" /mnt/gentoo/install_chroot.sh
 sed -i "s|USERPWD|$USER_PASSWORD|g" /mnt/gentoo/install_chroot.sh
 sed -i "s|KEYMAP_VAR|$KEYMAP|g" /mnt/gentoo/install_chroot.sh
 sed -i "s|X11_LAYOUT_VAR|$X11_LAYOUT|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|PART1|$PART1|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|PART2|$PART2|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|PART3|$PART3|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|PART1UUID|$PART1UUID|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|PART2UUID|$PART2UUID|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|PART3UUID|$PART3UUID|g" /mnt/gentoo/install_chroot.sh
 
 chmod +x /mnt/gentoo/install_chroot.sh
 
