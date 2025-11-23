@@ -409,7 +409,7 @@ cat >> /mnt/gentoo/etc/portage/make.conf << EOF
 # ============================================
 
 # Optimisations de compilation
-COMMON_FLAGS="-march=native -O2 -pipe"
+COMMON_FLAGS="-O2 -pipe -march=native"
 CFLAGS="\${COMMON_FLAGS}"
 CXXFLAGS="\${COMMON_FLAGS}"
 FCFLAGS="\${COMMON_FLAGS}"
@@ -429,16 +429,69 @@ fi
 cat >> /mnt/gentoo/etc/portage/make.conf << EOF
 
 # Configuration pour Gnome Desktop
-USE="systemd gnome gtk wayland pulseaudio networkmanager elogind dbus"
+USE="systemd gnome gtk wayland pulseaudio networkmanager elogind dbus \\
+     X gtk3 -qt4 -qt5 -kde cups jpeg png gif svg \\
+     alsa bluetooth wifi usb udisks policykit"
+
 ACCEPT_LICENSE="*"
 GRUB_PLATFORMS="efi-64"
 
 # Optimisations Portage
-FEATURES="parallel-fetch"
+FEATURES="parallel-fetch candy"
 GENTOO_MIRRORS="$STAGE3_MIRROR"
+
+# Options de compilation pour eviter les erreurs
+PORTAGE_NICENESS="15"
 EOF
 
 success "make.conf configure"
+
+# Configuration des package.use pour eviter les dependances circulaires
+step "Configuration des packages pour eviter les problemes de dependances"
+mkdir -p /mnt/gentoo/etc/portage/package.use
+
+cat > /mnt/gentoo/etc/portage/package.use/circular-deps << EOF
+# Dependances circulaires
+media-libs/libwebp -tiff
+media-libs/tiff -webp
+dev-libs/glib -sysprof
+
+# Eviter les conflits LLVM/Rust
+sys-devel/llvm -test
+dev-lang/rust -test
+media-libs/mesa -llvm
+
+# Simplifier les dependances Gnome
+gnome-base/gnome-shell -extensions
+app-text/poppler -qt5
+dev-libs/boost -python
+
+# Eviter les dependances circulaires X11/mesa
+x11-base/xorg-server -minimal
+media-libs/libglvnd X
+
+# Dependances Perl simplifiees
+dev-lang/perl -minimal
+EOF
+
+cat > /mnt/gentoo/etc/portage/package.use/gnome << EOF
+# Flags USE pour Gnome
+gnome-base/gnome-shell bluetooth networkmanager
+gnome-base/nautilus -previewer
+gnome-extra/gnome-tweaks -gnome-shell
+app-editors/gedit python
+EOF
+
+cat > /mnt/gentoo/etc/portage/package.use/system << EOF
+# Flags USE systeme
+sys-apps/systemd gnuefi
+sys-boot/grub mount
+net-misc/networkmanager wifi bluetooth wext
+sys-fs/udisks elogind
+sys-auth/polkit elogind
+EOF
+
+success "Configuration des packages terminee"
 
 mkdir -p /mnt/gentoo/etc/portage/repos.conf
 cp /mnt/gentoo/usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gentoo.conf
@@ -488,14 +541,10 @@ eselect profile set $PROFNUM
 eselect profile show
 echo ""
 echo ">>> Mise a jour du systeme"
-echo "Configuration des flags USE pour eviter les dependances circulaires..."
-mkdir -p /etc/portage/package.use
-echo "media-libs/libwebp -tiff" >> /etc/portage/package.use/circular-deps
-echo "media-libs/tiff -webp" >> /etc/portage/package.use/circular-deps
-echo "dev-libs/glib -sysprof" >> /etc/portage/package.use/circular-deps
-emerge --update --deep --newuse --with-bdeps=y @world
-echo "Retablissement des flags USE..."
-rm -f /etc/portage/package.use/circular-deps
+echo "Premiere passe de compilation avec dependances simplifiees..."
+emerge --update --deep --newuse --with-bdeps=y @world || true
+echo ""
+echo "Seconde passe de compilation complete..."
 emerge --update --deep --newuse --with-bdeps=y @world
 echo ""
 echo ">>> Configuration du fuseau horaire"
