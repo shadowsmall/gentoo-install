@@ -451,11 +451,14 @@ step "Configuration des packages pour eviter les problemes de dependances"
 mkdir -p /mnt/gentoo/etc/portage/package.use
 
 cat > /mnt/gentoo/etc/portage/package.use/circular-deps << EOF
-# Dependances circulaires
+# Dependances circulaires principales
 media-libs/libwebp -tiff
 media-libs/tiff -webp
 dev-libs/glib -sysprof
-dev-python/pillow -truetype
+
+# Dependances circulaires Python/Pillow
+dev-python/pillow -truetype -avif
+media-libs/libavif -gdk-pixbuf
 
 # Mesa necessite LLVM pour les cartes AMD
 media-libs/mesa llvm
@@ -469,20 +472,15 @@ gnome-base/gnome-shell -extensions
 app-text/poppler -qt5
 dev-libs/boost -python
 
-# Eviter les dependances circulaires X11/mesa
+# X11 et graphique (necessaires pour Gnome)
+x11-libs/cairo X
+x11-libs/pango X
+media-libs/harfbuzz introspection
 x11-base/xorg-server -minimal
 media-libs/libglvnd X
 
 # Dependances Perl simplifiees
 dev-lang/perl -minimal
-
-# Dependances Python simplifiees
-dev-python/docutils -python_single_target_python3_13
-media-libs/harfbuzz -introspection
-
-# Cairo et Pango
-x11-libs/cairo -X
-x11-libs/pango -X
 EOF
 
 cat > /mnt/gentoo/etc/portage/package.use/gnome << EOF
@@ -552,7 +550,13 @@ eselect profile set $PROFNUM
 eselect profile show
 echo ""
 echo ">>> Mise a jour du systeme"
+echo "Resolution du conflit Perl..."
+emerge --deselect dev-lang/perl:0/5.40 || true
+emerge --depclean || true
+echo ""
 echo "Premiere passe de compilation avec dependances simplifiees..."
+emerge --update --deep --newuse --with-bdeps=y @world --autounmask-write
+etc-update --automode -5
 emerge --update --deep --newuse --with-bdeps=y @world || true
 echo ""
 echo "Seconde passe de compilation complete..."
