@@ -659,21 +659,21 @@ echo ">>> Selection du profil systemd pour ${DESKTOP_ENV}"
 eselect profile list
 echo ""
 echo "Recherche du profil approprié..."
-if [ "$DESKTOP_ENV" != "none" ]; then
-    PROFNUM=$(eselect profile list | grep -i "$DESKTOP_PROFILE" | head -1 | awk '{print $1}' | tr -d '[]')
-    if [ -z "$PROFNUM" ]; then
+if [ "XXDESKTOPENVXX" != "none" ]; then
+    PROFNUM=\$(eselect profile list | grep -i "XXDESKTOPPROFILEXX" | head -1 | awk '{print \$1}' | tr -d '[]')
+    if [ -z "\$PROFNUM" ]; then
         echo "Profil specifique non trouve, utilisation du profil desktop systemd"
-        PROFNUM=$(eselect profile list | grep "desktop" | grep "systemd" | head -1 | awk '{print $1}' | tr -d '[]')
+        PROFNUM=\$(eselect profile list | grep "desktop" | grep "systemd" | head -1 | awk '{print \$1}' | tr -d '[]')
     fi
 else
-    PROFNUM=$(eselect profile list | grep "default/linux/amd64.*systemd" | grep -v "desktop" | head -1 | awk '{print $1}' | tr -d '[]')
+    PROFNUM=\$(eselect profile list | grep "default/linux/amd64.*systemd" | grep -v "desktop" | head -1 | awk '{print \$1}' | tr -d '[]')
 fi
-if [ -z "$PROFNUM" ]; then
+if [ -z "\$PROFNUM" ]; then
     echo "Utilisation du profil par defaut"
     PROFNUM=1
 fi
-echo "Selection du profil numero: $PROFNUM"
-eselect profile set $PROFNUM
+echo "Selection du profil numero: \$PROFNUM"
+eselect profile set \$PROFNUM
 eselect profile show
 echo ""
 echo ">>> Mise a jour du systeme"
@@ -731,8 +731,8 @@ echo "UUID=XXUUID2XX  none            swap    sw                  0 0" >> /etc/f
 echo ""
 echo ">>> Activation des services"
 systemctl enable NetworkManager
-if [ -n "$DISPLAY_MANAGER" ]; then
-    systemctl enable $DISPLAY_MANAGER
+if [ -n "XXDISPLAYMANAGERXX" ]; then
+    systemctl enable XXDISPLAYMANAGERXX
 fi
 echo ""
 echo ">>> Configuration du hostname"
@@ -773,6 +773,10 @@ sed -i "s|XXX11LAYOUTXX|$X11_LAYOUT|g" /mnt/gentoo/install_chroot.sh
 sed -i "s|XXUUID1XX|$PART1UUID|g" /mnt/gentoo/install_chroot.sh
 sed -i "s|XXUUID2XX|$PART2UUID|g" /mnt/gentoo/install_chroot.sh
 sed -i "s|XXUUID3XX|$PART3UUID|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXDESKTOPENVXX|$DESKTOP_ENV|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXDESKTOPPROFILEXX|$DESKTOP_PROFILE|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXDESKTOPPACKAGESXX|$DESKTOP_PACKAGES|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXDISPLAYMANAGERXX|$DISPLAY_MANAGER|g" /mnt/gentoo/install_chroot.sh
 
 chmod +x /mnt/gentoo/install_chroot.sh
 
