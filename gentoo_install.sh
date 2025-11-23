@@ -456,10 +456,12 @@ media-libs/libwebp -tiff
 media-libs/tiff -webp
 dev-libs/glib -sysprof
 
-# Eviter les conflits LLVM/Rust
+# Mesa necessite LLVM pour les cartes AMD
+media-libs/mesa llvm
+
+# Eviter les conflits de tests
 sys-devel/llvm -test
 dev-lang/rust -test
-media-libs/mesa -llvm
 
 # Simplifier les dependances Gnome
 gnome-base/gnome-shell -extensions
