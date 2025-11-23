@@ -455,6 +455,7 @@ cat > /mnt/gentoo/etc/portage/package.use/circular-deps << EOF
 media-libs/libwebp -tiff
 media-libs/tiff -webp
 dev-libs/glib -sysprof
+dev-python/pillow -truetype
 
 # Mesa necessite LLVM pour les cartes AMD
 media-libs/mesa llvm
@@ -474,6 +475,14 @@ media-libs/libglvnd X
 
 # Dependances Perl simplifiees
 dev-lang/perl -minimal
+
+# Dependances Python simplifiees
+dev-python/docutils -python_single_target_python3_13
+media-libs/harfbuzz -introspection
+
+# Cairo et Pango
+x11-libs/cairo -X
+x11-libs/pango -X
 EOF
 
 cat > /mnt/gentoo/etc/portage/package.use/gnome << EOF
