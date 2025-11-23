@@ -655,22 +655,22 @@ echo ""
 echo ">>> Mise a jour de l arbre Portage"
 emerge --sync
 echo ""
-echo ">>> Selection du profil systemd pour ${DESKTOP_ENV}"
+echo ">>> Selection du profil systemd pour XXDESKTOPENVXX"
 eselect profile list
 echo ""
-echo "Recherche du profil approprié..."
+echo "Recherche du profil approprie..."
 if [ "XXDESKTOPENVXX" != "none" ]; then
-    PROFNUM=\$(eselect profile list | grep -i "XXDESKTOPPROFILEXX" | head -1 | awk '{print \$1}' | tr -d '[]')
+    PROFNUM=\$(eselect profile list | grep -i "XXDESKTOPPROFILEXX" | head -1 | awk '{print \$1}' | sed 's/\[//g' | sed 's/\]//g')
     if [ -z "\$PROFNUM" ]; then
         echo "Profil specifique non trouve, utilisation du profil desktop systemd"
-        PROFNUM=\$(eselect profile list | grep "desktop" | grep "systemd" | head -1 | awk '{print \$1}' | tr -d '[]')
+        PROFNUM=\$(eselect profile list | grep "desktop" | grep "systemd" | head -1 | awk '{print \$1}' | sed 's/\[//g' | sed 's/\]//g')
     fi
 else
-    PROFNUM=\$(eselect profile list | grep "default/linux/amd64.*systemd" | grep -v "desktop" | head -1 | awk '{print \$1}' | tr -d '[]')
+    PROFNUM=\$(eselect profile list | grep "default/linux/amd64.*systemd" | grep -v "desktop" | head -1 | awk '{print \$1}' | sed 's/\[//g' | sed 's/\]//g')
 fi
 if [ -z "\$PROFNUM" ]; then
     echo "Utilisation du profil par defaut"
-    PROFNUM=1
+    PROFNUM=2
 fi
 echo "Selection du profil numero: \$PROFNUM"
 eselect profile set \$PROFNUM
