@@ -207,6 +207,94 @@ print_header
 echo -e "${MAGENTA}=== ETAPE 4/7 : Options d'installation ===${NC}"
 echo ""
 
+info "Selection de l'environnement de bureau"
+echo ""
+echo "Choisissez votre environnement de bureau:"
+echo ""
+echo "  1. Gnome (moderne, user-friendly, Wayland)"
+echo "  2. KDE Plasma (personnalisable, complet, puissant)"
+echo "  3. XFCE (leger, rapide, stable)"
+echo "  4. MATE (traditionnel, simple, fiable)"
+echo "  5. Cinnamon (elegant, intuitif)"
+echo "  6. LXQt (tres leger, Qt)"
+echo "  7. Aucun (installation minimale)"
+echo ""
+
+while true; do
+    read -p "Selectionnez une option (1-7): " de_choice
+    case "$de_choice" in
+        1)
+            DESKTOP_ENV="gnome"
+            DESKTOP_PROFILE="gnome/systemd"
+            DESKTOP_PACKAGES="gnome-base/gnome gnome-extra/gnome-tweaks"
+            DISPLAY_MANAGER="gdm"
+            USE_FLAGS="systemd gnome gtk wayland"
+            success "Gnome selectionne"
+            break
+            ;;
+        2)
+            DESKTOP_ENV="kde"
+            DESKTOP_PROFILE="desktop/plasma/systemd"
+            DESKTOP_PACKAGES="kde-plasma/plasma-meta kde-apps/dolphin kde-apps/konsole"
+            DISPLAY_MANAGER="sddm"
+            USE_FLAGS="systemd kde qt5 qt6 plasma"
+            success "KDE Plasma selectionne"
+            break
+            ;;
+        3)
+            DESKTOP_ENV="xfce"
+            DESKTOP_PROFILE="desktop/systemd"
+            DESKTOP_PACKAGES="xfce-base/xfce4-meta xfce-extra/xfce4-notifyd"
+            DISPLAY_MANAGER="lightdm"
+            USE_FLAGS="systemd gtk X xfce"
+            success "XFCE selectionne"
+            break
+            ;;
+        4)
+            DESKTOP_ENV="mate"
+            DESKTOP_PROFILE="desktop/systemd"
+            DESKTOP_PACKAGES="mate-base/mate mate-extra/mate-utils"
+            DISPLAY_MANAGER="lightdm"
+            USE_FLAGS="systemd gtk X mate"
+            success "MATE selectionne"
+            break
+            ;;
+        5)
+            DESKTOP_ENV="cinnamon"
+            DESKTOP_PROFILE="desktop/systemd"
+            DESKTOP_PACKAGES="gnome-extra/cinnamon"
+            DISPLAY_MANAGER="lightdm"
+            USE_FLAGS="systemd gtk X cinnamon"
+            success "Cinnamon selectionne"
+            break
+            ;;
+        6)
+            DESKTOP_ENV="lxqt"
+            DESKTOP_PROFILE="desktop/systemd"
+            DESKTOP_PACKAGES="lxqt-base/lxqt-meta"
+            DISPLAY_MANAGER="sddm"
+            USE_FLAGS="systemd qt5 qt6 X lxqt"
+            success "LXQt selectionne"
+            break
+            ;;
+        7)
+            DESKTOP_ENV="none"
+            DESKTOP_PROFILE="default/linux/amd64/23.0/systemd"
+            DESKTOP_PACKAGES=""
+            DISPLAY_MANAGER=""
+            USE_FLAGS="systemd"
+            success "Installation minimale selectionnee"
+            break
+            ;;
+        *)
+            warning "Option invalide. Veuillez choisir entre 1 et 7"
+            ;;
+    esac
+done
+
+echo ""
+sleep 2
+
 info "Selection du miroir Gentoo"
 echo ""
 echo "Choisissez votre region pour optimiser la vitesse de telechargement:"
@@ -287,7 +375,7 @@ echo "  * Partition Swap: $SWAP_SIZE MB"
 echo "  * Partition Root: $(($TOTAL_GB - $SWAP_SIZE / 1024 - 1)) GB (/) - ext4"
 echo ""
 echo -e "${CYAN}Logiciels:${NC}"
-echo "  * Environnement: Gnome Desktop"
+echo "  * Environnement: $DESKTOP_ENV"
 echo "  * Init: systemd"
 echo "  * Bootloader: GRUB (UEFI)"
 echo ""
@@ -428,9 +516,9 @@ fi
 
 cat >> /mnt/gentoo/etc/portage/make.conf << EOF
 
-# Configuration pour Gnome Desktop
-USE="systemd gnome gtk wayland pulseaudio networkmanager elogind dbus \\
-     X gtk3 -qt4 -qt5 -kde cups jpeg png gif svg \\
+# Configuration pour ${DESKTOP_ENV}
+USE="${USE_FLAGS} pulseaudio networkmanager elogind dbus \\
+     X gtk3 -qt4 cups jpeg png gif svg \\
      alsa bluetooth wifi usb udisks policykit"
 
 ACCEPT_LICENSE="*"
@@ -467,12 +555,11 @@ media-libs/mesa llvm
 sys-devel/llvm -test
 dev-lang/rust -test
 
-# Simplifier les dependances Gnome
-gnome-base/gnome-shell -extensions
+# Simplifier les dependances
 app-text/poppler -qt5
 dev-libs/boost -python
 
-# X11 et graphique (necessaires pour Gnome)
+# X11 et graphique
 x11-libs/cairo X
 x11-libs/pango X
 media-libs/harfbuzz introspection
@@ -483,13 +570,49 @@ media-libs/libglvnd X
 dev-lang/perl -minimal
 EOF
 
-cat > /mnt/gentoo/etc/portage/package.use/gnome << EOF
+# Configuration specifique selon l'environnement de bureau
+if [ "$DESKTOP_ENV" = "gnome" ]; then
+cat > /mnt/gentoo/etc/portage/package.use/desktop << EOF
 # Flags USE pour Gnome
-gnome-base/gnome-shell bluetooth networkmanager
+gnome-base/gnome-shell -extensions bluetooth networkmanager
 gnome-base/nautilus -previewer
 gnome-extra/gnome-tweaks -gnome-shell
 app-editors/gedit python
 EOF
+elif [ "$DESKTOP_ENV" = "kde" ]; then
+cat > /mnt/gentoo/etc/portage/package.use/desktop << EOF
+# Flags USE pour KDE Plasma
+kde-plasma/plasma-meta -qt4
+kde-apps/dolphin thumbnail
+kde-apps/konsole -minimal
+sys-auth/polkit kde
+EOF
+elif [ "$DESKTOP_ENV" = "xfce" ]; then
+cat > /mnt/gentoo/etc/portage/package.use/desktop << EOF
+# Flags USE pour XFCE
+xfce-base/xfce4-meta minimal
+xfce-extra/xfce4-notifyd
+x11-misc/lightdm gtk
+EOF
+elif [ "$DESKTOP_ENV" = "mate" ]; then
+cat > /mnt/gentoo/etc/portage/package.use/desktop << EOF
+# Flags USE pour MATE
+mate-base/mate -minimal
+x11-misc/lightdm gtk
+EOF
+elif [ "$DESKTOP_ENV" = "cinnamon" ]; then
+cat > /mnt/gentoo/etc/portage/package.use/desktop << EOF
+# Flags USE pour Cinnamon
+gnome-extra/cinnamon networkmanager
+x11-misc/lightdm gtk
+EOF
+elif [ "$DESKTOP_ENV" = "lxqt" ]; then
+cat > /mnt/gentoo/etc/portage/package.use/desktop << EOF
+# Flags USE pour LXQt
+lxqt-base/lxqt-meta -minimal
+x11-misc/sddm -minimal
+EOF
+fi
 
 cat > /mnt/gentoo/etc/portage/package.use/system << EOF
 # Flags USE systeme
@@ -532,14 +655,18 @@ echo ""
 echo ">>> Mise a jour de l arbre Portage"
 emerge --sync
 echo ""
-echo ">>> Selection du profil Gnome systemd"
+echo ">>> Selection du profil systemd pour ${DESKTOP_ENV}"
 eselect profile list
 echo ""
-echo "Recherche du profil Gnome/systemd..."
-PROFNUM=$(eselect profile list | grep -i "gnome" | grep -i "systemd" | head -1 | awk '{print $1}' | tr -d '[]')
-if [ -z "$PROFNUM" ]; then
-    echo "Profil Gnome non trouve, utilisation du profil desktop systemd"
-    PROFNUM=$(eselect profile list | grep "desktop" | grep "systemd" | head -1 | awk '{print $1}' | tr -d '[]')
+echo "Recherche du profil approprié..."
+if [ "$DESKTOP_ENV" != "none" ]; then
+    PROFNUM=$(eselect profile list | grep -i "$DESKTOP_PROFILE" | head -1 | awk '{print $1}' | tr -d '[]')
+    if [ -z "$PROFNUM" ]; then
+        echo "Profil specifique non trouve, utilisation du profil desktop systemd"
+        PROFNUM=$(eselect profile list | grep "desktop" | grep "systemd" | head -1 | awk '{print $1}' | tr -d '[]')
+    fi
+else
+    PROFNUM=$(eselect profile list | grep "default/linux/amd64.*systemd" | grep -v "desktop" | head -1 | awk '{print $1}' | tr -d '[]')
 fi
 if [ -z "$PROFNUM" ]; then
     echo "Utilisation du profil par defaut"
@@ -551,16 +678,19 @@ eselect profile show
 echo ""
 echo ">>> Mise a jour du systeme"
 echo "Resolution du conflit Perl..."
-emerge --deselect dev-lang/perl:0/5.40 || true
-emerge --depclean || true
+emerge --deselect dev-lang/perl:0/5.40 2>/dev/null || true
+emerge --depclean 2>/dev/null || true
 echo ""
 echo "Premiere passe de compilation avec dependances simplifiees..."
-emerge --update --deep --newuse --with-bdeps=y @world --autounmask-write
+emerge --update --deep --newuse --with-bdeps=y @world --autounmask-write --keep-going
 etc-update --automode -5
-emerge --update --deep --newuse --with-bdeps=y @world || true
+emerge --update --deep --newuse --with-bdeps=y @world --keep-going || true
 echo ""
 echo "Seconde passe de compilation complete..."
-emerge --update --deep --newuse --with-bdeps=y @world
+emerge --update --deep --newuse --with-bdeps=y @world --keep-going
+echo ""
+echo "Nettoyage des paquets qui ont echoue..."
+emerge --resume --skipfirst 2>/dev/null || true
 echo ""
 echo ">>> Configuration du fuseau horaire"
 echo "XXTIMEZONEXX" > /etc/timezone
@@ -601,7 +731,9 @@ echo "UUID=XXUUID2XX  none            swap    sw                  0 0" >> /etc/f
 echo ""
 echo ">>> Activation des services"
 systemctl enable NetworkManager
-systemctl enable gdm
+if [ -n "$DISPLAY_MANAGER" ]; then
+    systemctl enable $DISPLAY_MANAGER
+fi
 echo ""
 echo ">>> Configuration du hostname"
 hostnamectl set-hostname XXHOSTNAMEXX
@@ -664,17 +796,24 @@ echo -e "${MAGENTA}=== ETAPE 7/7 : Installation terminee ! ===${NC}"
 echo ""
 
 echo -e "${GREEN}================================================================${NC}"
-echo -e "${GREEN}   Installation de Gentoo avec Gnome terminee avec succes !    ${NC}"
+if [ "$DESKTOP_ENV" = "none" ]; then
+    echo -e "${GREEN}   Installation de Gentoo (minimal) terminee avec succes !     ${NC}"
+else
+    echo -e "${GREEN}   Installation de Gentoo avec ${DESKTOP_ENV} terminee avec succes ! ${NC}"
+fi
 echo -e "${GREEN}================================================================${NC}"
 echo ""
 
 echo -e "${CYAN}Recapitulatif de votre installation:${NC}"
 echo "  * Systeme: Gentoo Linux (systemd)"
-echo "  * Desktop: Gnome"
+echo "  * Desktop: $DESKTOP_ENV"
 echo "  * Disque: $DISK"
 echo "  * Hostname: $HOSTNAME"
 echo "  * Clavier: $KEYMAP"
 echo "  * Utilisateur: $USERNAME"
+if [ -n "$DISPLAY_MANAGER" ]; then
+    echo "  * Display Manager: $DISPLAY_MANAGER"
+fi
 echo ""
 
 echo -e "${YELLOW}Prochaines etapes:${NC}"
