@@ -1,12 +1,11 @@
 #!/bin/bash
 
-# Script d'installation Gentoo Linux avec détection automatique et Gnome
-# ATTENTION: Ce script doit être exécuté depuis un environnement live Gentoo
-# Lisez et comprenez chaque section avant de l'exécuter
+# Script d'installation Gentoo Linux avec detection automatique et Gnome
+# ATTENTION: Ce script doit etre execute depuis un environnement live Gentoo
 
 set -e
 
-# Couleurs pour l'affichage
+# Couleurs
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -15,7 +14,6 @@ CYAN='\033[0;36m'
 MAGENTA='\033[0;35m'
 NC='\033[0m'
 
-# Fonction pour afficher un header
 print_header() {
     clear
     echo -e "${GREEN}================================================================${NC}"
@@ -24,27 +22,22 @@ print_header() {
     echo ""
 }
 
-# Fonction pour afficher les étapes
 step() {
     echo -e "\n${YELLOW}>>> $1${NC}"
 }
 
-# Fonction pour afficher un message d'information
 info() {
     echo -e "${CYAN}i $1${NC}"
 }
 
-# Fonction pour afficher un message de succès
 success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    echo -e "${GREEN}v $1${NC}"
 }
 
-# Fonction pour afficher un avertissement
 warning() {
     echo -e "${RED}! $1${NC}"
 }
 
-# Fonction pour lire une entrée avec valeur par défaut
 read_input() {
     local prompt="$1"
     local default="$2"
@@ -59,7 +52,6 @@ read_input() {
     fi
 }
 
-# Fonction pour lire un mot de passe
 read_password() {
     local prompt="$1"
     local var_name="$2"
@@ -74,53 +66,24 @@ read_password() {
         
         if [ "$password" = "$password_confirm" ]; then
             if [ ${#password} -lt 6 ]; then
-                warning "Le mot de passe doit contenir au moins 6 caractères"
+                warning "Le mot de passe doit contenir au moins 6 caracteres"
                 continue
             fi
             eval $var_name="$password"
             break
         else
-            warning "Les mots de passe ne correspondent pas. Réessayez."
+            warning "Les mots de passe ne correspondent pas. Reessayez."
         fi
     done
 }
 
-# Fonction de menu de sélection
-select_option() {
-    local prompt="$1"
-    shift
-    local options=("$@")
-    
-    echo -e "\n${CYAN}$prompt${NC}"
-    echo ""
-    
-    for i in "${!options[@]}"; do
-        echo "  $((i+1)). ${options[$i]}"
-    done
-    echo ""
-    
-    while true; do
-        read -p "Sélectionnez une option (1-${#options[@]}): " choice
-        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#options[@]}" ]; then
-            selected_index=$((choice-1))
-            echo "${options[$selected_index]}"
-            return 0
-        else
-            warning "Option invalide. Veuillez choisir entre 1 et ${#options[@]}"
-        fi
-    done
-}
-
-# Début de l'interface interactive
 print_header
 warning "ATTENTION: Ce script va formater et partitionner votre disque !"
-warning "Assurez-vous d'avoir sauvegardé vos données importantes."
+warning "Assurez-vous d'avoir sauvegarde vos donnees importantes."
 echo ""
-read -p "Appuyez sur Entrée pour continuer ou Ctrl+C pour annuler..."
+read -p "Appuyez sur Entree pour continuer ou Ctrl+C pour annuler..."
 
-# ============================================
-# SECTION 1: Configuration du disque
-# ============================================
+# ETAPE 1: Selection du disque
 print_header
 echo -e "${MAGENTA}=== ETAPE 1/7 : Selection du disque ===${NC}"
 echo ""
@@ -129,7 +92,6 @@ info "Disques disponibles:"
 lsblk -d -o NAME,SIZE,TYPE,MODEL | grep disk
 echo ""
 
-# Détection automatique du disque
 AUTO_DISK="/dev/$(lsblk -d -o NAME,SIZE,TYPE | grep disk | sort -k2 -h | tail -1 | awk '{print $1}')"
 AUTO_DISK_SIZE=$(lsblk -d -o SIZE $AUTO_DISK | tail -1)
 
@@ -146,9 +108,7 @@ fi
 success "Disque selectionne: $DISK"
 sleep 2
 
-# ============================================
-# SECTION 2: Configuration systeme
-# ============================================
+# ETAPE 2: Configuration systeme
 print_header
 echo -e "${MAGENTA}=== ETAPE 2/7 : Configuration systeme ===${NC}"
 echo ""
@@ -157,7 +117,6 @@ read_input "Nom de la machine (hostname)" "gentoo" "HOSTNAME"
 success "Hostname: $HOSTNAME"
 echo ""
 
-# Configuration du fuseau horaire
 info "Exemples de fuseaux horaires:"
 echo "  - Europe/Paris"
 echo "  - America/New_York"
@@ -168,9 +127,8 @@ read_input "Fuseau horaire" "Europe/Paris" "TIMEZONE"
 success "Timezone: $TIMEZONE"
 echo ""
 
-# Configuration de la locale
 info "Exemples de locales:"
-echo "  - fr_FR.UTF-8 (Français)"
+echo "  - fr_FR.UTF-8 (Francais)"
 echo "  - en_US.UTF-8 (Anglais)"
 echo "  - de_DE.UTF-8 (Allemand)"
 echo "  - es_ES.UTF-8 (Espagnol)"
@@ -179,83 +137,47 @@ read_input "Locale principale" "fr_FR.UTF-8" "LOCALE"
 success "Locale: $LOCALE"
 echo ""
 
-# Configuration du clavier
 info "Configuration du clavier"
-KEYMAP_CHOICE=$(select_option "Choisissez votre disposition de clavier:" \
-    "fr (AZERTY Français)" \
-    "us (QWERTY Américain)" \
-    "uk (QWERTY Britannique)" \
-    "de (QWERTZ Allemand)" \
-    "es (QWERTY Espagnol)" \
-    "it (QWERTY Italien)" \
-    "pt (QWERTY Portugais)" \
-    "be (AZERTY Belge)" \
-    "ch (QWERTZ Suisse)" \
-    "ca (QWERTY Canadien)" \
-    "Autre (saisie manuelle)")
+echo ""
+echo "Choisissez votre disposition de clavier:"
+echo ""
+echo "  1. fr (AZERTY Francais)"
+echo "  2. us (QWERTY Americain)"
+echo "  3. uk (QWERTY Britannique)"
+echo "  4. de (QWERTZ Allemand)"
+echo "  5. es (QWERTY Espagnol)"
+echo "  6. it (QWERTY Italien)"
+echo "  7. pt (QWERTY Portugais)"
+echo "  8. be (AZERTY Belge)"
+echo "  9. ch (QWERTZ Suisse)"
+echo "  10. ca (QWERTY Canadien)"
+echo ""
 
-case "$KEYMAP_CHOICE" in
-    "fr (AZERTY Français)")
-        KEYMAP="fr"
-        X11_LAYOUT="fr"
-        ;;
-    "us (QWERTY Américain)")
-        KEYMAP="us"
-        X11_LAYOUT="us"
-        ;;
-    "uk (QWERTY Britannique)")
-        KEYMAP="uk"
-        X11_LAYOUT="gb"
-        ;;
-    "de (QWERTZ Allemand)")
-        KEYMAP="de"
-        X11_LAYOUT="de"
-        ;;
-    "es (QWERTY Espagnol)")
-        KEYMAP="es"
-        X11_LAYOUT="es"
-        ;;
-    "it (QWERTY Italien)")
-        KEYMAP="it"
-        X11_LAYOUT="it"
-        ;;
-    "pt (QWERTY Portugais)")
-        KEYMAP="pt"
-        X11_LAYOUT="pt"
-        ;;
-    "be (AZERTY Belge)")
-        KEYMAP="be"
-        X11_LAYOUT="be"
-        ;;
-    "ch (QWERTZ Suisse)")
-        KEYMAP="ch"
-        X11_LAYOUT="ch"
-        ;;
-    "ca (QWERTY Canadien)")
-        KEYMAP="ca"
-        X11_LAYOUT="ca"
-        ;;
-    *)
-        info "Liste des dispositions disponibles: fr, us, uk, de, es, it, pt, be, ch, ca, etc."
-        read_input "Entrez le code du clavier" "fr" "KEYMAP"
-        X11_LAYOUT="$KEYMAP"
-        ;;
-esac
+while true; do
+    read -p "Selectionnez une option (1-10): " kb_choice
+    case "$kb_choice" in
+        1) KEYMAP="fr"; X11_LAYOUT="fr"; break ;;
+        2) KEYMAP="us"; X11_LAYOUT="us"; break ;;
+        3) KEYMAP="uk"; X11_LAYOUT="gb"; break ;;
+        4) KEYMAP="de"; X11_LAYOUT="de"; break ;;
+        5) KEYMAP="es"; X11_LAYOUT="es"; break ;;
+        6) KEYMAP="it"; X11_LAYOUT="it"; break ;;
+        7) KEYMAP="pt"; X11_LAYOUT="pt"; break ;;
+        8) KEYMAP="be"; X11_LAYOUT="be"; break ;;
+        9) KEYMAP="ch"; X11_LAYOUT="ch"; break ;;
+        10) KEYMAP="ca"; X11_LAYOUT="ca"; break ;;
+        *) warning "Option invalide" ;;
+    esac
+done
 
 success "Disposition clavier: $KEYMAP"
-
-# Test du clavier
+loadkeys $KEYMAP 2>/dev/null || true
 echo ""
-info "Test de votre clavier - tapez quelques caractères pour vérifier:"
-loadkeys $KEYMAP 2>/dev/null || warning "Impossible de charger la disposition $KEYMAP maintenant (sera configurée à l'installation)"
-read -p "Tapez quelque chose: " keyboard_test
-success "Configuration du clavier enregistrée"
-
+read -p "Tapez quelque chose pour tester: " keyboard_test
+success "Configuration du clavier enregistree"
 sleep 2
 
-# ============================================
-# SECTION 3: Configuration utilisateurs
-# ============================================
+# ETAPE 3: Configuration utilisateurs
 print_header
 echo -e "${MAGENTA}=== ETAPE 3/7 : Configuration des utilisateurs ===${NC}"
 echo ""
@@ -267,7 +189,6 @@ echo ""
 
 read_input "Nom de l'utilisateur principal" "user" "USERNAME"
 
-# Validation du nom d'utilisateur
 if [[ ! "$USERNAME" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
     warning "Nom d'utilisateur invalide. Utilisation de 'user' par defaut."
     USERNAME="user"
@@ -281,26 +202,24 @@ read_password "Mot de passe utilisateur" "USER_PASSWORD"
 success "Mot de passe utilisateur configure"
 sleep 2
 
-# ============================================
-# SECTION 4: Options d'installation
-# ============================================
+# ETAPE 4: Options d'installation
 print_header
 echo -e "${MAGENTA}=== ETAPE 4/7 : Options d'installation ===${NC}"
 echo ""
 
-info "Sélection du miroir Gentoo"
+info "Selection du miroir Gentoo"
 echo ""
-echo "Choisissez votre région pour optimiser la vitesse de téléchargement:"
+echo "Choisissez votre region pour optimiser la vitesse de telechargement:"
 echo ""
-echo "  1. Automatique (recommandé)"
+echo "  1. Automatique (recommande)"
 echo "  2. Europe"
-echo "  3. Amérique du Nord"
+echo "  3. Amerique du Nord"
 echo "  4. Asie"
 echo "  5. Autre"
 echo ""
 
 while true; do
-    read -p "Sélectionnez une option (1-5): " mirror_choice
+    read -p "Selectionnez une option (1-5): " mirror_choice
     case "$mirror_choice" in
         1)
             STAGE3_MIRROR="https://distfiles.gentoo.org/releases/amd64/autobuilds"
@@ -336,9 +255,7 @@ done
 echo ""
 sleep 2
 
-# ============================================
-# SECTION 5: Récapitulatif
-# ============================================
+# ETAPE 5: Recapitulatif
 print_header
 echo -e "${MAGENTA}=== ETAPE 5/7 : Recapitulatif de la configuration ===${NC}"
 echo ""
@@ -365,14 +282,14 @@ echo "  * Root: ********"
 echo "  * Utilisateur: $USERNAME (********)"
 echo ""
 echo -e "${CYAN}Partitionnement:${NC}"
-echo "  * Partition EFI: 512 MB (/boot)"
+echo "  * Partition Boot: 512 MB (/boot) - FAT32"
 echo "  * Partition Swap: $SWAP_SIZE MB"
-echo "  * Partition Root: $(($TOTAL_GB - $SWAP_SIZE / 1024 - 1)) GB (/)"
+echo "  * Partition Root: $(($TOTAL_GB - $SWAP_SIZE / 1024 - 1)) GB (/) - ext4"
 echo ""
 echo -e "${CYAN}Logiciels:${NC}"
 echo "  * Environnement: Gnome Desktop"
 echo "  * Init: systemd"
-echo "  * Bootloader: GRUB (UEFI)"
+echo "  * Bootloader: GRUB (BIOS/Legacy)"
 echo ""
 
 warning "DERNIERE CHANCE: Toutes les donnees sur $DISK seront EFFACEES!"
@@ -380,20 +297,17 @@ echo ""
 read -p "Tapez 'OUI' en majuscules pour confirmer: " CONFIRM
 
 if [ "$CONFIRM" != "OUI" ]; then
-    echo "Installation annulée."
+    echo "Installation annulee."
     exit 1
 fi
 
-# ============================================
-# SECTION 6: Installation
-# ============================================
+# ETAPE 6: Installation
 print_header
 echo -e "${MAGENTA}=== ETAPE 6/7 : Installation en cours ===${NC}"
 echo ""
 info "Cette etape peut prendre 2-4 heures selon votre connexion et votre materiel"
 sleep 3
 
-# Partitionnement automatique du disque
 step "Partitionnement automatique du disque $DISK"
 wipefs -a $DISK 2>/dev/null || true
 parted -s $DISK mklabel gpt
@@ -404,7 +318,6 @@ parted -s $DISK mkpart primary ext4 $((513 + SWAP_SIZE))MiB 100%
 
 sleep 2
 
-# Détection automatique des noms de partitions
 if [ -e "${DISK}p1" ]; then
     PART1="${DISK}p1"
     PART2="${DISK}p2"
@@ -415,7 +328,6 @@ else
     PART3="${DISK}3"
 fi
 
-# Formatage
 step "Formatage des partitions"
 mkfs.vfat -F32 $PART1
 mkswap $PART2
@@ -423,7 +335,6 @@ mkfs.ext4 -F $PART3
 
 success "Partitions creees et formatees"
 
-# Montage des partitions
 step "Montage des partitions"
 mkdir -p /mnt/gentoo
 swapon $PART2
@@ -433,19 +344,48 @@ mount $PART1 /mnt/gentoo/boot
 
 success "Partitions montees"
 
-# Téléchargement du Stage3
-step "Téléchargement du tarball Stage3"
+step "Telechargement du tarball Stage3"
 cd /mnt/gentoo
+
 wget -q --show-progress ${STAGE3_MIRROR}/latest-stage3-amd64-systemd.txt
-# Extraire correctement le nom du fichier (ignorer les signatures GPG)
-STAGE3=$(grep -v '^#' latest-stage3-amd64-systemd.txt | grep '\.tar\.xz
+
+STAGE3=""
+exec 3< latest-stage3-amd64-systemd.txt
+while read -u 3 line; do
+    case "$line" in
+        \#*|*BEGIN*|*END*|"")
+            continue
+            ;;
+        *tar.xz*)
+            STAGE3=$(echo "$line" | awk '{print $1}')
+            break
+            ;;
+    esac
+done
+exec 3<&-
+
+if [ -z "$STAGE3" ]; then
+    warning "Erreur: Impossible de determiner le fichier Stage3"
+    echo "Contenu du fichier:"
+    cat latest-stage3-amd64-systemd.txt
+    exit 1
+fi
+
+info "Telechargement de: $STAGE3"
+wget -q --show-progress "${STAGE3_MIRROR}/${STAGE3}"
+
+if [ ! -f stage3-*.tar.xz ]; then
+    warning "Erreur: Le telechargement du Stage3 a echoue"
+    exit 1
+fi
+
+success "Stage3 telecharge"
 
 step "Extraction du Stage3 (quelques minutes)"
 tar xpf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 success "Stage3 extrait"
 
-# Detection automatique des CPU FLAGS
 step "Detection automatique des CPU FLAGS"
 if ! command -v cpuid2cpuflags &> /dev/null; then
     info "Installation de cpuid2cpuflags..."
@@ -460,7 +400,6 @@ else
     warning "Impossible de detecter les CPU FLAGS automatiquement"
 fi
 
-# Configuration automatique de make.conf
 step "Configuration automatique de make.conf"
 CORES=$(nproc)
 cat >> /mnt/gentoo/etc/portage/make.conf << EOF
@@ -501,14 +440,11 @@ EOF
 
 success "make.conf configure"
 
-# Configuration des repos
 mkdir -p /mnt/gentoo/etc/portage/repos.conf
 cp /mnt/gentoo/usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gentoo.conf
 
-# Copie DNS
 cp -L /etc/resolv.conf /mnt/gentoo/etc/
 
-# Montage des filesystems système
 step "Montage des filesystems systeme"
 mount --types proc /proc /mnt/gentoo/proc
 mount --rbind /sys /mnt/gentoo/sys
@@ -520,150 +456,119 @@ mount --make-slave /mnt/gentoo/run
 
 success "Filesystems montes"
 
-# Creation du script chroot
 step "Preparation de l'installation chroot"
-cat > /mnt/gentoo/install_chroot.sh << 'ENDCHROOT'
+
+# Creation du script chroot - SANS heredocs imbriques
+cat > /mnt/gentoo/install_chroot.sh << 'XXYYZZ'
 #!/bin/bash
 set -e
-
 source /etc/profile
-export PS1="(chroot) \${PS1}"
-
 echo "========================================================"
 echo "  Installation dans l environnement chroot"
 echo "========================================================"
-
 echo ""
 echo ">>> Mise a jour de l arbre Portage"
 emerge-webrsync
 emerge --sync --quiet
-
 echo ""
 echo ">>> Selection du profil Gnome systemd"
-PROFILE_NUM=\$(eselect profile list | grep "default/linux/amd64.*gnome/systemd" | grep -v "/desktop" | tail -1 | awk '{print \$1}' | tr -d '[]')
-eselect profile set \$PROFILE_NUM
-echo "Profil selectionne:"
+PROFNUM=$(eselect profile list | grep "default/linux/amd64.*gnome/systemd" | grep -v "/desktop" | tail -1 | awk '{print $1}' | tr -d '[]')
+eselect profile set $PROFNUM
 eselect profile show
-
 echo ""
-echo ">>> Mise a jour du systeme (cela peut prendre du temps)"
+echo ">>> Mise a jour du systeme"
 emerge --update --deep --newuse --with-bdeps=y @world
-
 echo ""
 echo ">>> Configuration du fuseau horaire"
-echo "TIMEZONE" > /etc/timezone
+echo "XXTIMEZONEXX" > /etc/timezone
 emerge --config sys-libs/timezone-data
-
 echo ""
 echo ">>> Configuration de la locale"
-echo "LOCALE UTF-8" >> /etc/locale.gen
+echo "XXLOCALEXX UTF-8" >> /etc/locale.gen
 echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
 locale-gen
-eselect locale set LOCALE
-
+eselect locale set XXLOCALEXX
 env-update && source /etc/profile
-
 echo ""
 echo ">>> Configuration du clavier"
 mkdir -p /etc/vconsole.conf.d
-echo "KEYMAP=KEYMAP_VAR" > /etc/vconsole.conf
+echo "KEYMAP=XXKEYMAPXX" > /etc/vconsole.conf
 echo "FONT=lat9w-16" >> /etc/vconsole.conf
-
 mkdir -p /etc/X11/xorg.conf.d
-cat > /etc/X11/xorg.conf.d/00-keyboard.conf << 'ENDX11'
-Section "InputClass"
-    Identifier "system-keyboard"
-    MatchIsKeyboard "on"
-    Option "XkbLayout" "X11_LAYOUT_VAR"
-EndSection
-ENDX11
-
+echo 'Section "InputClass"' > /etc/X11/xorg.conf.d/00-keyboard.conf
+echo '    Identifier "system-keyboard"' >> /etc/X11/xorg.conf.d/00-keyboard.conf
+echo '    MatchIsKeyboard "on"' >> /etc/X11/xorg.conf.d/00-keyboard.conf
+echo '    Option "XkbLayout" "XXX11LAYOUTXX"' >> /etc/X11/xorg.conf.d/00-keyboard.conf
+echo 'EndSection' >> /etc/X11/xorg.conf.d/00-keyboard.conf
 echo ""
 echo ">>> Installation du firmware Linux"
 emerge sys-kernel/linux-firmware
-
 echo ""
-echo ">>> Installation du kernel (compilation longue)"
+echo ">>> Installation du kernel"
 emerge sys-kernel/gentoo-kernel
-
 echo ""
-echo ">>> Installation de Gnome et des outils systeme"
-echo "    Cette etape peut prendre 1-2 heures..."
+echo ">>> Installation de Gnome"
 emerge --autounmask-write gnome-base/gnome gnome-extra/gnome-tweaks sys-boot/grub sys-fs/dosfstools net-misc/networkmanager app-admin/sudo
-
 etc-update --automode -5
-
 echo ""
 echo ">>> Configuration de fstab"
-cat > /etc/fstab << 'ENDFSTAB'
-UUID=PART3UUID  /               ext4    defaults,noatime    0 1
-UUID=PART1UUID  /boot           vfat    defaults            0 2
-UUID=PART2UUID  none            swap    sw                  0 0
-ENDFSTAB
-
+echo "UUID=XXUUID3XX  /               ext4    defaults,noatime    0 1" > /etc/fstab
+echo "UUID=XXUUID1XX  /boot           vfat    defaults            0 2" >> /etc/fstab
+echo "UUID=XXUUID2XX  none            swap    sw                  0 0" >> /etc/fstab
 echo ""
 echo ">>> Activation des services"
 systemctl enable NetworkManager
 systemctl enable gdm
-
 echo ""
 echo ">>> Configuration du hostname"
-hostnamectl set-hostname HOSTNAME
-
+hostnamectl set-hostname XXHOSTNAMEXX
 echo ""
 echo ">>> Configuration du mot de passe root"
-echo "root:ROOTPWD" | chpasswd
-
+echo "root:XXROOTPWDXX" | chpasswd
 echo ""
-echo ">>> Creation de l utilisateur USERNAME"
-useradd -m -G wheel,audio,video,usb,cdrom -s /bin/bash USERNAME
-echo "USERNAME:USERPWD" | chpasswd
-
+echo ">>> Creation de l utilisateur"
+useradd -m -G wheel,audio,video,usb,cdrom -s /bin/bash XXUSERNAMEXX
+echo "XXUSERNAMEXX:XXUSERPWDXX" | chpasswd
 echo ""
 echo ">>> Configuration de sudo"
 sed -i 's/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
-
 echo ""
 echo ">>> Installation de GRUB"
-grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+grub-install --target=i386-pc XXDISKXX
 grub-mkconfig -o /boot/grub/grub.cfg
-
 echo ""
 echo ">>> Installation d outils supplementaires"
 emerge --noreplace app-editors/nano app-editors/vim sys-apps/pciutils sys-apps/usbutils net-misc/wget net-misc/curl app-shells/bash-completion
-
 echo ""
-echo "Installation chroot terminee avec succes!"
-ENDCHROOT
+echo "Installation chroot terminee!"
+XXYYZZ
 
-# Obtenir les UUIDs
 PART1UUID=$(blkid -s UUID -o value $PART1)
 PART2UUID=$(blkid -s UUID -o value $PART2)
 PART3UUID=$(blkid -s UUID -o value $PART3)
 
-# Remplacer les variables
-sed -i "s|TIMEZONE|$TIMEZONE|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|LOCALE|$LOCALE|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|HOSTNAME|$HOSTNAME|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|ROOTPWD|$ROOT_PASSWORD|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|USERNAME|$USERNAME|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|USERPWD|$USER_PASSWORD|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|KEYMAP_VAR|$KEYMAP|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|X11_LAYOUT_VAR|$X11_LAYOUT|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|PART1UUID|$PART1UUID|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|PART2UUID|$PART2UUID|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|PART3UUID|$PART3UUID|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXTIMEZONEXX|$TIMEZONE|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXLOCALEXX|$LOCALE|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXHOSTNAMEXX|$HOSTNAME|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXROOTPWDXX|$ROOT_PASSWORD|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXUSERNAMEXX|$USERNAME|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXUSERPWDXX|$USER_PASSWORD|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXKEYMAPXX|$KEYMAP|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXX11LAYOUTXX|$X11_LAYOUT|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXUUID1XX|$PART1UUID|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXUUID2XX|$PART2UUID|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXUUID3XX|$PART3UUID|g" /mnt/gentoo/install_chroot.sh
+sed -i "s|XXDISKXX|$DISK|g" /mnt/gentoo/install_chroot.sh
 
 chmod +x /mnt/gentoo/install_chroot.sh
 
-step "Entree dans l'environnement chroot"
+step "Entree dans l environnement chroot"
 info "La compilation de Gnome va prendre beaucoup de temps (2-4h)"
-info "Allez prendre un cafe (ou plusieurs)..."
+info "Allez prendre un cafe..."
 sleep 3
 
 chroot /mnt/gentoo /bin/bash /install_chroot.sh
 
-# Nettoyage
 step "Nettoyage des fichiers temporaires"
 rm /mnt/gentoo/install_chroot.sh
 rm /mnt/gentoo/stage3-*.tar.xz
@@ -671,17 +576,13 @@ rm /mnt/gentoo/latest-stage3-amd64-systemd.txt
 
 success "Nettoyage termine"
 
-# ============================================
-# SECTION 7: Finalisation
-# ============================================
+# ETAPE 7: Finalisation
 print_header
 echo -e "${MAGENTA}=== ETAPE 7/7 : Installation terminee ! ===${NC}"
 echo ""
 
 echo -e "${GREEN}================================================================${NC}"
-echo -e "${GREEN}                                                                ${NC}"
 echo -e "${GREEN}   Installation de Gentoo avec Gnome terminee avec succes !    ${NC}"
-echo -e "${GREEN}                                                                ${NC}"
 echo -e "${GREEN}================================================================${NC}"
 echo ""
 
@@ -711,309 +612,7 @@ echo ""
 
 echo -e "${RED}IMPORTANT:${NC}"
 echo "  Changez ces mots de passe immediatement apres la premiere connexion !"
-echo "  Commandes: passwd (pour root) et passwd $USERNAME (pour l'utilisateur)"
 echo ""
 
 echo -e "${GREEN}Profitez de votre nouveau systeme Gentoo !${NC}"
-echo "" | head -n1 | awk '{print $1}')
-
-if [ -z "$STAGE3" ]; then
-    warning "Impossible de trouver le fichier Stage3. Tentative avec une autre méthode..."
-    STAGE3=$(grep '\.tar\.xz' latest-stage3-amd64-systemd.txt | grep -v '^#' | grep -v 'BEGIN' | head -n1 | awk '{print $1}')
-fi
-
-info "Téléchargement de $STAGE3..."
-wget -q --show-progress ${STAGE3_MIRROR}/${STAGE3}
-
-success "Stage3 téléchargé"
-
-step "Extraction du Stage3 (quelques minutes)"
-tar xpf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
-
-success "Stage3 extrait"
-
-# Détection automatique des CPU FLAGS
-step "Détection automatique des CPU FLAGS"
-if ! command -v cpuid2cpuflags &> /dev/null; then
-    info "Installation de cpuid2cpuflags..."
-    emerge --quiet app-portage/cpuid2cpuflags 2>/dev/null || true
-fi
-
-if command -v cpuid2cpuflags &> /dev/null; then
-    CPU_FLAGS=$(cpuid2cpuflags | grep "CPU_FLAGS_X86" | cut -d: -f2- | xargs)
-    info "CPU FLAGS détectés: $CPU_FLAGS"
-else
-    CPU_FLAGS=""
-    warning "Impossible de détecter les CPU FLAGS automatiquement"
-fi
-
-# Configuration automatique de make.conf
-step "Configuration automatique de make.conf"
-CORES=$(nproc)
-cat >> /mnt/gentoo/etc/portage/make.conf << EOF
-
-# ============================================
-# Configuration générée automatiquement
-# ============================================
-
-# Optimisations de compilation
-COMMON_FLAGS="-march=native -O2 -pipe"
-CFLAGS="\${COMMON_FLAGS}"
-CXXFLAGS="\${COMMON_FLAGS}"
-FCFLAGS="\${COMMON_FLAGS}"
-FFLAGS="\${COMMON_FLAGS}"
-
-# Parallélisation (${CORES} cœurs détectés)
-MAKEOPTS="-j${CORES} -l${CORES}"
-EMERGE_DEFAULT_OPTS="--jobs=${CORES} --load-average=${CORES}"
-
-# CPU FLAGS optimisés pour votre processeur
-EOF
-
-if [ -n "$CPU_FLAGS" ]; then
-    echo "CPU_FLAGS_X86=\"${CPU_FLAGS}\"" >> /mnt/gentoo/etc/portage/make.conf
-fi
-
-cat >> /mnt/gentoo/etc/portage/make.conf << EOF
-
-# Configuration pour Gnome Desktop
-USE="systemd gnome gtk wayland pulseaudio networkmanager elogind dbus"
-ACCEPT_LICENSE="*"
-GRUB_PLATFORMS="efi-64"
-
-# Optimisations Portage
-FEATURES="parallel-fetch"
-GENTOO_MIRRORS="$STAGE3_MIRROR"
-EOF
-
-success "make.conf configuré"
-
-# Configuration des repos
-mkdir -p /mnt/gentoo/etc/portage/repos.conf
-cp /mnt/gentoo/usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gentoo.conf
-
-# Copie DNS
-cp -L /etc/resolv.conf /mnt/gentoo/etc/
-
-# Montage des filesystems système
-step "Montage des filesystems système"
-mount --types proc /proc /mnt/gentoo/proc
-mount --rbind /sys /mnt/gentoo/sys
-mount --make-rslave /mnt/gentoo/sys
-mount --rbind /dev /mnt/gentoo/dev
-mount --make-rslave /mnt/gentoo/dev
-mount --bind /run /mnt/gentoo/run
-mount --make-slave /mnt/gentoo/run
-
-success "Filesystems montés"
-
-# Création du script chroot
-step "Préparation de l'installation chroot"
-cat > /mnt/gentoo/install_chroot.sh << 'CHROOTEOF'
-#!/bin/bash
-set -e
-
-source /etc/profile
-export PS1="(chroot) ${PS1}"
-
-echo "╔════════════════════════════════════════════════════════╗"
-echo "║  Installation dans l'environnement chroot             ║"
-echo "╚════════════════════════════════════════════════════════╝"
-
-echo ""
-echo ">>> Mise à jour de l'arbre Portage"
-emerge-webrsync
-emerge --sync --quiet
-
-echo ""
-echo ">>> Sélection du profil Gnome systemd"
-PROFILE_NUM=$(eselect profile list | grep "default/linux/amd64.*gnome/systemd" | grep -v "/desktop" | tail -1 | awk '{print $1}' | tr -d '[]')
-eselect profile set $PROFILE_NUM
-echo "Profil sélectionné:"
-eselect profile show
-
-echo ""
-echo ">>> Mise à jour du système (cela peut prendre du temps)"
-emerge --update --deep --newuse --with-bdeps=y @world
-
-echo ""
-echo ">>> Configuration du fuseau horaire"
-echo "TIMEZONE" > /etc/timezone
-emerge --config sys-libs/timezone-data
-
-echo ""
-echo ">>> Configuration de la locale"
-echo "LOCALE UTF-8" >> /etc/locale.gen
-echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
-locale-gen
-eselect locale set LOCALE
-
-env-update && source /etc/profile
-
-echo ""
-echo ">>> Configuration du clavier"
-# Configuration du clavier console (systemd)
-mkdir -p /etc/vconsole.conf.d
-cat > /etc/vconsole.conf << VCONFEOF
-KEYMAP=KEYMAP_VAR
-FONT=lat9w-16
-VCONFEOF
-
-# Configuration du clavier X11 pour Gnome
-mkdir -p /etc/X11/xorg.conf.d
-cat > /etc/X11/xorg.conf.d/00-keyboard.conf << X11CONFEOF
-Section "InputClass"
-    Identifier "system-keyboard"
-    MatchIsKeyboard "on"
-    Option "XkbLayout" "X11_LAYOUT_VAR"
-EndSection
-X11CONFEOF
-
-echo ""
-echo ">>> Installation du firmware Linux"
-emerge sys-kernel/linux-firmware
-
-echo ""
-echo ">>> Installation du kernel (compilation longue)"
-emerge sys-kernel/gentoo-kernel
-
-echo ""
-echo ">>> Installation de Gnome et des outils système"
-echo "    Cette étape peut prendre 1-2 heures..."
-emerge --autounmask-write \
-    gnome-base/gnome \
-    gnome-extra/gnome-tweaks \
-    sys-boot/grub \
-    sys-fs/dosfstools \
-    net-misc/networkmanager \
-    app-admin/sudo
-
-# Accepter les changements
-etc-update --automode -5
-
-echo ""
-echo ">>> Configuration de fstab"
-cat > /etc/fstab << FSTABEOF
-# <fs>          <mountpoint>    <type>  <opts>              <dump> <pass>
-UUID=$(blkid -s UUID -o value PART3)  /               ext4    defaults,noatime    0 1
-UUID=$(blkid -s UUID -o value PART1)  /boot           vfat    defaults            0 2
-UUID=$(blkid -s UUID -o value PART2)  none            swap    sw                  0 0
-FSTABEOF
-
-echo ""
-echo ">>> Activation des services"
-systemctl enable NetworkManager
-systemctl enable gdm
-
-echo ""
-echo ">>> Configuration du hostname"
-hostnamectl set-hostname HOSTNAME
-
-echo ""
-echo ">>> Configuration du mot de passe root"
-echo "root:ROOTPWD" | chpasswd
-
-echo ""
-echo ">>> Création de l'utilisateur USERNAME"
-useradd -m -G wheel,audio,video,usb,cdrom -s /bin/bash USERNAME
-echo "USERNAME:USERPWD" | chpasswd
-
-echo ""
-echo ">>> Configuration de sudo"
-sed -i 's/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
-
-echo ""
-echo ">>> Installation de GRUB"
-grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
-grub-mkconfig -o /boot/grub/grub.cfg
-
-echo ""
-echo ">>> Installation d'outils supplémentaires"
-emerge --noreplace \
-    app-editors/nano \
-    app-editors/vim \
-    sys-apps/pciutils \
-    sys-apps/usbutils \
-    net-misc/wget \
-    net-misc/curl \
-    app-shells/bash-completion
-
-echo ""
-echo "✓ Installation chroot terminée avec succès!"
-CHROOTEOF
-
-# Remplacer les variables
-sed -i "s|TIMEZONE|$TIMEZONE|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|LOCALE|$LOCALE|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|HOSTNAME|$HOSTNAME|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|ROOTPWD|$ROOT_PASSWORD|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|USERNAME|$USERNAME|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|USERPWD|$USER_PASSWORD|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|KEYMAP_VAR|$KEYMAP|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|X11_LAYOUT_VAR|$X11_LAYOUT|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|PART1|$PART1|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|PART2|$PART2|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|PART3|$PART3|g" /mnt/gentoo/install_chroot.sh
-
-chmod +x /mnt/gentoo/install_chroot.sh
-
-step "Entrée dans l'environnement chroot"
-info "La compilation de Gnome va prendre beaucoup de temps (2-4h)"
-info "Allez prendre un café (ou plusieurs)... ☕"
-sleep 3
-
-chroot /mnt/gentoo /bin/bash /install_chroot.sh
-
-# Nettoyage
-step "Nettoyage des fichiers temporaires"
-rm /mnt/gentoo/install_chroot.sh
-rm /mnt/gentoo/stage3-*.tar.xz
-rm /mnt/gentoo/latest-stage3-amd64-systemd.txt
-
-success "Nettoyage terminé"
-
-# ============================================
-# SECTION 7: Finalisation
-# ============================================
-print_header
-echo -e "${MAGENTA}═══ ÉTAPE 7/7 : Installation terminée ! ═══${NC}"
-echo ""
-
-echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║                                                                ║${NC}"
-echo -e "${GREEN}║   🎉 Installation de Gentoo avec Gnome terminée avec succès ! ║${NC}"
-echo -e "${GREEN}║                                                                ║${NC}"
-echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
-echo ""
-
-echo -e "${CYAN}📋 Récapitulatif de votre installation:${NC}"
-echo "  • Système: Gentoo Linux (systemd)"
-echo "  • Desktop: Gnome"
-echo "  • Disque: $DISK"
-echo "  • Hostname: $HOSTNAME"
-echo "  • Clavier: $KEYMAP"
-echo "  • Utilisateur: $USERNAME"
-echo ""
-
-echo -e "${YELLOW}🔧 Prochaines étapes:${NC}"
-echo "  1. Quitter le chroot (si nécessaire): exit"
-echo "  2. Démonter les partitions:"
-echo "     cd /"
-echo "     umount -R /mnt/gentoo"
-echo "     swapoff $PART2"
-echo "  3. Redémarrer le système:"
-echo "     reboot"
-echo ""
-
-echo -e "${CYAN}🔑 Identifiants de connexion:${NC}"
-echo "  • Root: $ROOT_PASSWORD"
-echo "  • $USERNAME: $USER_PASSWORD"
-echo ""
-
-echo -e "${RED}⚠️  IMPORTANT:${NC}"
-echo "  Changez ces mots de passe immédiatement après la première connexion !"
-echo "  Commandes: passwd (pour root) et passwd $USERNAME (pour l'utilisateur)"
-echo ""
-
-echo -e "${GREEN}✨ Profitez de votre nouveau système Gentoo ! ✨${NC}"
 echo ""
