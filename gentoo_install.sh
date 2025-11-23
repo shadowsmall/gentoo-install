@@ -468,10 +468,22 @@ echo "  Installation dans l environnement chroot"
 echo "========================================================"
 echo ""
 echo ">>> Mise a jour de l arbre Portage"
-emerge --sync --quiet
+emerge --sync
 echo ""
 echo ">>> Selection du profil Gnome systemd"
-PROFNUM=$(eselect profile list | grep "default/linux/amd64.*gnome/systemd" | grep -v "/desktop" | tail -1 | awk '{print $1}' | tr -d '[]')
+eselect profile list
+echo ""
+echo "Recherche du profil Gnome/systemd..."
+PROFNUM=$(eselect profile list | grep -i "gnome" | grep -i "systemd" | head -1 | awk '{print $1}' | tr -d '[]')
+if [ -z "$PROFNUM" ]; then
+    echo "Profil Gnome non trouve, utilisation du profil desktop systemd"
+    PROFNUM=$(eselect profile list | grep "desktop" | grep "systemd" | head -1 | awk '{print $1}' | tr -d '[]')
+fi
+if [ -z "$PROFNUM" ]; then
+    echo "Utilisation du profil par defaut"
+    PROFNUM=1
+fi
+echo "Selection du profil numero: $PROFNUM"
 eselect profile set $PROFNUM
 eselect profile show
 echo ""
