@@ -289,7 +289,7 @@ echo ""
 echo -e "${CYAN}Logiciels:${NC}"
 echo "  * Environnement: Gnome Desktop"
 echo "  * Init: systemd"
-echo "  * Bootloader: GRUB (BIOS/Legacy)"
+echo "  * Bootloader: GRUB (UEFI)"
 echo ""
 
 warning "DERNIERE CHANCE: Toutes les donnees sur $DISK seront EFFACEES!"
@@ -468,7 +468,6 @@ echo "  Installation dans l environnement chroot"
 echo "========================================================"
 echo ""
 echo ">>> Mise a jour de l arbre Portage"
-emerge-webrsync
 emerge --sync --quiet
 echo ""
 echo ">>> Selection du profil Gnome systemd"
@@ -534,7 +533,7 @@ echo ">>> Configuration de sudo"
 sed -i 's/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
 echo ""
 echo ">>> Installation de GRUB"
-grub-install --target=i386-pc XXDISKXX
+grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
 grub-mkconfig -o /boot/grub/grub.cfg
 echo ""
 echo ">>> Installation d outils supplementaires"
@@ -558,7 +557,6 @@ sed -i "s|XXX11LAYOUTXX|$X11_LAYOUT|g" /mnt/gentoo/install_chroot.sh
 sed -i "s|XXUUID1XX|$PART1UUID|g" /mnt/gentoo/install_chroot.sh
 sed -i "s|XXUUID2XX|$PART2UUID|g" /mnt/gentoo/install_chroot.sh
 sed -i "s|XXUUID3XX|$PART3UUID|g" /mnt/gentoo/install_chroot.sh
-sed -i "s|XXDISKXX|$DISK|g" /mnt/gentoo/install_chroot.sh
 
 chmod +x /mnt/gentoo/install_chroot.sh
 
