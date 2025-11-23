@@ -492,6 +492,7 @@ echo "Configuration des flags USE pour eviter les dependances circulaires..."
 mkdir -p /etc/portage/package.use
 echo "media-libs/libwebp -tiff" >> /etc/portage/package.use/circular-deps
 echo "media-libs/tiff -webp" >> /etc/portage/package.use/circular-deps
+echo "dev-libs/glib -sysprof" >> /etc/portage/package.use/circular-deps
 emerge --update --deep --newuse --with-bdeps=y @world
 echo "Retablissement des flags USE..."
 rm -f /etc/portage/package.use/circular-deps
