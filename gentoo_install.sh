@@ -16,9 +16,9 @@ NC='\033[0m'
 
 print_header() {
     clear
-    echo -e "${GREEN}================================================================${NC}"
-    echo -e "${GREEN}         Installation Gentoo Linux avec Gnome                  ${NC}"
-    echo -e "${GREEN}================================================================${NC}"
+    echo -e "${GREEN}====================================================${NC}"
+    echo -e "${GREEN}         Installation Gentoo Linux                  ${NC}"
+    echo -e "${GREEN}=====================================================${NC}"
     echo ""
 }
 
