@@ -762,6 +762,11 @@ PART1UUID=$(blkid -s UUID -o value $PART1)
 PART2UUID=$(blkid -s UUID -o value $PART2)
 PART3UUID=$(blkid -s UUID -o value $PART3)
 
+PART1UUID=$(blkid -s UUID -o value $PART1)
+PART2UUID=$(blkid -s UUID -o value $PART2)
+PART3UUID=$(blkid -s UUID -o value $PART3)
+
+# Remplacer les variables
 sed -i "s|XXTIMEZONEXX|$TIMEZONE|g" /mnt/gentoo/install_chroot.sh
 sed -i "s|XXLOCALEXX|$LOCALE|g" /mnt/gentoo/install_chroot.sh
 sed -i "s|XXHOSTNAMEXX|$HOSTNAME|g" /mnt/gentoo/install_chroot.sh
@@ -784,9 +789,6 @@ step "Entree dans l environnement chroot"
 info "La compilation de Gnome va prendre beaucoup de temps (2-4h)"
 info "Allez prendre un cafe..."
 sleep 3
-
-# Supprimer l'ancien script s'il existe
-rm -f /mnt/gentoo/install_chroot.sh
 
 chroot /mnt/gentoo /bin/bash /install_chroot.sh
 
