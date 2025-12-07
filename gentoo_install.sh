@@ -16,9 +16,9 @@ NC='\033[0m'
 
 print_header() {
     clear
-    echo -e "${GREEN}====================================================${NC}"
-    echo -e "${GREEN}         Installation Gentoo Linux                  ${NC}"
-    echo -e "${GREEN}=====================================================${NC}"
+    echo -e "${GREEN}================================================================${NC}"
+    echo -e "${GREEN}         Installation Gentoo Linux avec Gnome                  ${NC}"
+    echo -e "${GREEN}================================================================${NC}"
     echo ""
 }
 
@@ -784,6 +784,9 @@ step "Entree dans l environnement chroot"
 info "La compilation de Gnome va prendre beaucoup de temps (2-4h)"
 info "Allez prendre un cafe..."
 sleep 3
+
+# Supprimer l'ancien script s'il existe
+rm -f /mnt/gentoo/install_chroot.sh
 
 chroot /mnt/gentoo /bin/bash /install_chroot.sh
 
