@@ -785,6 +785,14 @@ sed -i "s|XXDISPLAYMANAGERXX|$DISPLAY_MANAGER|g" /mnt/gentoo/install_chroot.sh
 
 chmod +x /mnt/gentoo/install_chroot.sh
 
+# Verification que le script a bien ete cree
+if [ ! -f /mnt/gentoo/install_chroot.sh ]; then
+    warning "ERREUR: Le script chroot n'a pas ete cree correctement!"
+    exit 1
+fi
+
+success "Script chroot cree avec succes"
+
 step "Entree dans l environnement chroot"
 info "La compilation de Gnome va prendre beaucoup de temps (2-4h)"
 info "Allez prendre un cafe..."
